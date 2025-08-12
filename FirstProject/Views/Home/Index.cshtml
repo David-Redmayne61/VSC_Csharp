@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "First Project";
+}
+
+<div class="text-center">
+    <h1>@ViewData["Title"]</h1>
+    <p>@ViewData["Message"]</p>
+
+    <form asp-controller="Home" asp-action="SubmitNames" method="post">
+        <div class="form-group mb-3">
+            <label for="Forename" class="form-label fw-bold">Forename:</label>
+            <input type="text" class="form-control" id="Forename" name="Forename" 
+                placeholder="Enter your forename" required aria-label="Forename">
+        </div>
+        <div class="form-group mb-3">
+            <label for="FamilyName" class="form-label fw-bold">Family Name:</label>
+            <input type="text" class="form-control" id="FamilyName" name="FamilyName" 
+                placeholder="Enter your family name" required aria-label="Family Name">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
