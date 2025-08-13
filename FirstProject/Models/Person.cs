@@ -7,9 +7,17 @@ namespace FirstProject.Models
         public int Id { get; set; }
         
         [Required]
-        public string Forename { get; set; }
+        public required string Forename { get; set; }
         
         [Required]
-        public string FamilyName { get; set; }
+        public required string FamilyName { get; set; }
+
+        [Required]
+        public required string Gender { get; set; }
+
+        [Required]
+        [Range(1900, 2025, ErrorMessage = "Please enter a valid year between 1900 and 2025")]
+        [Display(Name = "Year of Birth")]
+        public int YearOfBirth { get; set; }
     }
 }

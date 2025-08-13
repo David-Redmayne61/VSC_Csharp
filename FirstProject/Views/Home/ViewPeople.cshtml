@@ -1,0 +1,181 @@
+@model IEnumerable<FirstProject.Models.Person>
+
+@{
+    ViewData["Title"] = "View People";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">Database Records</h2>
+        <div>
+            <button onclick="printGrid()" class="btn btn-info me-2">
+                <i class="fas fa-print"></i> Print Grid
+            </button>
+            <a asp-action="ExportToExcel" class="btn btn-success me-2">
+                <i class="fas fa-file-excel"></i> Export to Excel
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-home"></i> Return to Home
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-container">
+                <div class="table-scroll">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <a asp-action="ViewPeople" asp-route-sortOrder="@ViewBag.IdSortParam" class="text-dark text-decoration-none">
+                                        ID <i class="fas fa-sort"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="ViewPeople" asp-route-sortOrder="@ViewBag.ForenameSortParam" class="text-dark text-decoration-none">
+                                        Forename <i class="fas fa-sort"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="ViewPeople" asp-route-sortOrder="@ViewBag.FamilyNameSortParam" class="text-dark text-decoration-none">
+                                        Family Name <i class="fas fa-sort"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="ViewPeople" asp-route-sortOrder="@ViewBag.GenderSortParam" class="text-dark text-decoration-none">
+                                        Gender <i class="fas fa-sort"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="ViewPeople" asp-route-sortOrder="@ViewBag.YearOfBirthSortParam" class="text-dark text-decoration-none">
+                                        Year of Birth <i class="fas fa-sort"></i>
+                                    </a>
+                                </th>
+                                <th class="actions-column">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Id</td>
+                                    <td>@item.Forename</td>
+                                    <td>@item.FamilyName</td>
+                                    <td>@item.Gender</td>
+                                    <td>@item.YearOfBirth</td>
+                                    <td class="actions-column">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Edit</a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function printGrid() {
+            const printStyles = `
+                <style>
+                    body {
+                        padding: 20px;
+                        font-family: Arial, sans-serif;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 1rem;
+                    }
+                    .table th, .table td {
+                        padding: 8px;
+                        border: 1px solid #dee2e6;
+                        text-align: left;
+                    }
+                    .table thead th {
+                        background-color: #f8f9fa;
+                        font-weight: bold;
+                    }
+                    .table tbody tr:nth-of-type(odd) {
+                        background-color: rgba(0,0,0,.05);
+                    }
+                    .actions-column, .btn, .fa-sort {
+                        display: none !important;
+                    }
+                    h2 {
+                        color: #0d6efd;
+                        margin-bottom: 20px;
+                    }
+                    
+                    @@page {
+                        margin: 20mm;
+                        size: auto;
+                    }
+                    
+                    .footer {
+                        position: fixed;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        width: 100%;
+                        text-align: center;
+                        padding: 10px;
+                        font-size: 12px;
+                        border-top: 1px solid #dee2e6;
+                        display: flex;
+                        justify-content: space-between;
+                        padding-left: 20px;
+                        padding-right: 20px;
+                    }
+                    
+                    .footer-left {
+                        text-align: left;
+                    }
+                    
+                    .footer-center {
+                        text-align: center;
+                    }
+                </style>
+            `;
+
+            const currentDateTime = new Date().toLocaleString();
+            const printWindow = window.open('', '_blank', 'width=800,height=600,menubar=no,toolbar=no,location=no,status=no');
+            
+            // Set the document title which appears in the footer
+            printWindow.document.title = "First Project";
+            
+            // Write the content
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>First Project</title>
+                    ${printStyles}
+                </head>
+                <body>
+                    <h2>Database Records</h2>
+                    ${document.querySelector('.card-body').innerHTML}
+                    <div class="footer">
+                        <span class="footer-left">${currentDateTime}</span>
+                        <span class="footer-center">First Project</span>
+                        <span></span>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+            
+            printWindow.onload = function() {
+                printWindow.focus();
+                printWindow.print();
+                setTimeout(() => printWindow.close(), 250);
+            };
+        }
+    </script>
+}

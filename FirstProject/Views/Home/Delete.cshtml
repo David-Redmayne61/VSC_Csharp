@@ -1,0 +1,44 @@
+@model FirstProject.Models.Person
+
+@{
+    ViewData["Title"] = "Delete Person";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-danger">
+                <div class="card-body">
+                    <h3 class="text-danger mb-4">Delete Confirmation</h3>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Are you sure you want to delete this person?
+                    </div>
+                    
+                    <dl class="row mt-4">
+                        <dt class="col-sm-4">Forename:</dt>
+                        <dd class="col-sm-8">@Model.Forename</dd>
+                        
+                        <dt class="col-sm-4">Family Name:</dt>
+                        <dd class="col-sm-8">@Model.FamilyName</dd>
+                        
+                        <dt class="col-sm-4">Gender:</dt>
+                        <dd class="col-sm-8">@Model.Gender</dd>
+                    </dl>
+
+                    <form asp-action="Delete" class="mt-4">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                            <a asp-action="ViewPeople" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

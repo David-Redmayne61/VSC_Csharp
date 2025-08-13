@@ -5,10 +5,20 @@
 <div class="container py-5">
     <div class="text-center mb-4">
         <h1 class="display-4 text-primary mb-3">@ViewData["Title"]</h1>
-        <p class="lead">@ViewData["Message"]</p>
-        @if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+        @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
         {
-            <div class="alert alert-danger">@ViewData["ErrorMessage"]</div>
+            <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.DuplicateMessage))
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                @ViewBag.DuplicateMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="clearForm()"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+        {
+            <div class="alert alert-success">@ViewBag.SuccessMessage</div>
         }
     </div>
 
@@ -16,20 +26,41 @@
         <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-body">
-                    <form asp-controller="Home" asp-action="SubmitNames" method="post" 
-                          onsubmit="return validateForm()">
+                    <form asp-controller="Home" asp-action="SubmitNames" method="post" onsubmit="return validateForm()">
                         <div class="form-group mb-4">
-                            <label for="Forename" class="form-label fw-bold text-primary">Forename:</label>
-                            <input type="text" class="form-control form-control-lg" id="Forename" name="Forename" 
-                                placeholder="Enter your forename" required aria-label="Forename">
+                            <label for="Forename" class="form-label fw-bold">Forename:</label>
+                            <input type="text" class="form-control" id="Forename" name="Forename" placeholder="Enter your forename">
                         </div>
                         <div class="form-group mb-4">
-                            <label for="FamilyName" class="form-label fw-bold text-primary">Family Name:</label>
-                            <input type="text" class="form-control form-control-lg" id="FamilyName" name="FamilyName" 
-                                placeholder="Enter your family name" required aria-label="Family Name">
+                            <label for="FamilyName" class="form-label fw-bold">Family Name:</label>
+                            <input type="text" class="form-control" id="FamilyName" name="FamilyName" placeholder="Enter your family name">
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="Gender" class="form-label fw-bold">Gender:</label>
+                            <select class="form-select" id="Gender" name="Gender" required>
+                                <option value="">Please select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="PreferNotToSay">Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="YearOfBirth" class="form-label fw-bold">Year of Birth:</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="YearOfBirth" 
+                                   name="YearOfBirth" 
+                                   pattern="\d{4}"
+                                   maxlength="4"
+                                   placeholder="YYYY"
+                                   oninput="this.value = this.value.replace(/[^\d]/g, '')"
+                                   required>
+                            <div class="invalid-feedback">
+                                Please enter a valid 4-digit year between 1900 and 2025
+                            </div>
                         </div>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+                            <button type="submit" class="btn btn-primary">Submit</button>
                         </div>
                     </form>
                 </div>
@@ -49,6 +80,24 @@
                 return false;
             }
             return true;
+        }
+
+        document.getElementById('YearOfBirth').addEventListener('change', function() {
+            const year = parseInt(this.value);
+            if (year < 1900 || year > 2025) {
+                this.classList.add('is-invalid');
+                this.setCustomValidity('Year must be between 1900 and 2025');
+            } else {
+                this.classList.remove('is-invalid');
+                this.setCustomValidity('');
+            }
+        });
+
+        function clearForm() {
+            document.getElementById('Forename').value = '';
+            document.getElementById('FamilyName').value = '';
+            document.getElementById('Gender').selectedIndex = 0;
+            document.getElementById('YearOfBirth').value = '';
         }
     </script>
 }
