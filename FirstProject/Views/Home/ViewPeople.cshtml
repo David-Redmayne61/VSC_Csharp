@@ -8,12 +8,22 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-primary">Database Records</h2>
         <div>
-            <button onclick="printGrid()" class="btn btn-info me-2">
-                <i class="fas fa-print"></i> Print Grid
-            </button>
-            <a asp-action="ExportToExcel" class="btn btn-success me-2">
-                <i class="fas fa-file-excel"></i> Export to Excel
-            </a>
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-file-export"></i> Output Options
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="printGrid()">
+                        <i class="fas fa-desktop"></i> Print Preview
+                    </a></li>
+                    <li><a class="dropdown-item" asp-action="ExportToPdf">
+                        <i class="fas fa-file-pdf"></i> Export to PDF
+                    </a></li>
+                    <li><a class="dropdown-item" asp-action="ExportToExcel">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </a></li>
+                </ul>
+            </div>
             <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
                 <i class="fas fa-home"></i> Return to Home
             </a>
@@ -75,6 +85,12 @@
                 </div>
             </div>
         </div>
+        @if (Model != null && Model.Any())
+        {
+            <div class="card-footer text-muted text-end mt-3">
+                Total Records: @Model.Count()
+            </div>
+        }
     </div>
 </div>
 
@@ -101,41 +117,47 @@
                         background-color: #f8f9fa;
                         font-weight: bold;
                     }
+                    .actions-column, .btn, .fa-sort {
+                        display: none !important;
+                    }
                     .footer {
                         position: fixed;
                         bottom: 0;
+                        left: 0;
+                        right: 0;
                         width: 100%;
                         text-align: center;
                         padding: 10px;
+                        font-size: 12px;
+                        border-top: 1px solid #dee2e6;
+                        display: flex;
+                        justify-content: space-between;
+                        padding-left: 20px;
+                        padding-right: 20px;
                     }
-                    
                     @@page {
-                        size: auto;
                         margin: 20mm;
+                        size: auto;
                     }
                 </style>
             `;
 
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
             const currentDateTime = new Date().toLocaleString();
-            const printWindow = window.open('', '_blank', 'width=800,height=600,menubar=no,toolbar=no,location=no,status=no');
             
-            // Set the document title which appears in the footer
-            printWindow.document.title = "First Project";
-            
-            // Write the content
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>First Project</title>
+                    <title>Database Records</title>
                     ${printStyles}
                 </head>
                 <body>
                     <h2>Database Records</h2>
-                    ${document.querySelector('.card-body').innerHTML}
+                    ${document.querySelector('.table-container').innerHTML}
                     <div class="footer">
-                        <span class="footer-left">${currentDateTime}</span>
-                        <span class="footer-center">First Project</span>
+                        <span>${currentDateTime}</span>
+                        <span>First Project</span>
                         <span></span>
                     </div>
                 </body>
@@ -143,12 +165,12 @@
             `);
 
             printWindow.document.close();
+            printWindow.focus();
             
-            printWindow.onload = function() {
-                printWindow.focus();
+            setTimeout(() => {
                 printWindow.print();
-                setTimeout(() => printWindow.close(), 250);
-            };
+                printWindow.close();
+            }, 250);
         }
     </script>
 }

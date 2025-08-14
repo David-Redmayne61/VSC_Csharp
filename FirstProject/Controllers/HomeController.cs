@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 using System.Text;
 using OfficeOpenXml;
 using System.Drawing;
+using DinkToPdf;
+using DinkToPdf.Contracts;
+using FirstProject.Services;
+using FirstProject.Extensions;
 
 namespace FirstProject.Controllers
 {
@@ -14,11 +18,16 @@ namespace FirstProject.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
+        private readonly PdfService _pdfService;
 
-        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
+        public HomeController(
+            ILogger<HomeController> logger, 
+            ApplicationDbContext context,
+            PdfService pdfService)
         {
             _logger = logger;
             _context = context;
+            _pdfService = pdfService;
         }
 
         public IActionResult Index()
@@ -108,7 +117,7 @@ namespace FirstProject.Controllers
                     people = people.OrderByDescending(p => p.YearOfBirth);
                     break;
                 default:
-                    people = people.OrderBy(p => p.Id);
+                    people = people.OrderBy(p => p.FamilyName);  // Changed from Id to FamilyName
                     break;
             }
             return View(await people.ToListAsync());
@@ -177,9 +186,23 @@ namespace FirstProject.Controllers
             return RedirectToAction(nameof(ViewPeople));
         }
 
-        public async Task<IActionResult> ExportToExcel()
+        public async Task<IActionResult> ExportToExcel(string forename, string familyName, string gender, int? yearOfBirth)
         {
-            var people = await _context.People.ToListAsync();
+            var query = _context.People.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(forename))
+                query = query.Where(p => p.Forename.Contains(forename));
+
+            if (!string.IsNullOrWhiteSpace(familyName))
+                query = query.Where(p => p.FamilyName.Contains(familyName));
+
+            if (!string.IsNullOrWhiteSpace(gender))
+                query = query.Where(p => p.Gender == gender);
+
+            if (yearOfBirth.HasValue)
+                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+
+            var people = await query.ToListAsync();
             
             using var package = new ExcelPackage();
             var worksheet = package.Workbook.Worksheets.Add("People");
@@ -238,10 +261,162 @@ namespace FirstProject.Controllers
             );
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        public async Task<IActionResult> Search(string sortOrder, string forename, string familyName, string gender, int? yearOfBirth)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            ViewData["CurrentForename"] = forename;
+            ViewData["CurrentFamilyName"] = familyName;
+            ViewData["CurrentGender"] = gender;
+            ViewData["CurrentYearOfBirth"] = yearOfBirth;
+
+            // Set up sort parameters
+            ViewBag.IdSortParam = string.IsNullOrEmpty(sortOrder) ? "id_desc" : "";
+            ViewBag.ForenameSortParam = sortOrder == "forename" ? "forename_desc" : "forename";
+            ViewBag.FamilyNameSortParam = sortOrder == "familyname" ? "familyname_desc" : "familyname";
+            ViewBag.GenderSortParam = sortOrder == "gender" ? "gender_desc" : "gender";
+            ViewBag.YearOfBirthSortParam = sortOrder == "yearofbirth" ? "yearofbirth_desc" : "yearofbirth";
+
+            var query = _context.People.AsQueryable();
+
+            // Apply search filters
+            if (!string.IsNullOrWhiteSpace(forename))
+                query = query.Where(p => p.Forename.Contains(forename));
+
+            if (!string.IsNullOrWhiteSpace(familyName))
+                query = query.Where(p => p.FamilyName.Contains(familyName));
+
+            if (!string.IsNullOrWhiteSpace(gender))
+                query = query.Where(p => p.Gender == gender);
+
+            if (yearOfBirth.HasValue)
+                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+
+            // Apply sorting
+            query = sortOrder switch
+            {
+                "id_desc" => query.OrderByDescending(p => p.Id),
+                "forename" => query.OrderBy(p => p.Forename),
+                "forename_desc" => query.OrderByDescending(p => p.Forename),
+                "familyname" => query.OrderBy(p => p.FamilyName),
+                "familyname_desc" => query.OrderByDescending(p => p.FamilyName),
+                "gender" => query.OrderBy(p => p.Gender),
+                "gender_desc" => query.OrderByDescending(p => p.Gender),
+                "yearofbirth" => query.OrderBy(p => p.YearOfBirth),
+                "yearofbirth_desc" => query.OrderByDescending(p => p.YearOfBirth),
+                _ => query.OrderBy(p => p.FamilyName)  // Changed from Id to FamilyName
+            };
+
+            var results = await query.ToListAsync();
+            return View(results);
+        }
+
+        public IActionResult ClearSearch()
+        {
+            return RedirectToAction(nameof(Search));
+        }
+
+        public async Task<IActionResult> ExportToPdf(string forename, string familyName, string gender, int? yearOfBirth)
+        {
+            var query = _context.People.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(forename))
+                query = query.Where(p => p.Forename.Contains(forename));
+
+            if (!string.IsNullOrWhiteSpace(familyName))
+                query = query.Where(p => p.FamilyName.Contains(familyName));
+
+            if (!string.IsNullOrWhiteSpace(gender))
+                query = query.Where(p => p.Gender == gender);
+
+            if (yearOfBirth.HasValue)
+                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+
+            var people = await query.ToListAsync();
+
+            var html = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; }}
+                        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                        thead {{ display: table-header-group; }}
+                        th, td {{ padding: 8px; border: 1px solid #ddd; text-align: left; }}
+                        th {{ background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }}
+                        tr {{ page-break-inside: avoid; }}
+                        .footer {{ 
+                            position: fixed; 
+                            bottom: 0; 
+                            width: 100%; 
+                            font-size: 12px;
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                        }}
+                        .footer-content {{
+                            display: flex;
+                            justify-content: space-between;
+                            margin: 0 20px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h2>Database Records</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Forename</th>
+                                <th>Family Name</th>
+                                <th>Gender</th>
+                                <th>Year of Birth</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {string.Join("", people.Select(p => $@"
+                                <tr>
+                                    <td>{p.Id}</td>
+                                    <td>{p.Forename}</td>
+                                    <td>{p.FamilyName}</td>
+                                    <td>{p.Gender}</td>
+                                    <td>{p.YearOfBirth}</td>
+                                </tr>
+                            "))}
+                        </tbody>
+                    </table>
+                    <div class='footer'>
+                        <div class='footer-content'>
+                            <span>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</span>
+                            <span>First Project</span>
+                            <span>Page [page] of [topage]</span>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            var pdf = _pdfService.GeneratePdf(html);
+            return File(pdf, "application/pdf", $"export_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+        }
+
+        public async Task<IActionResult> Index(string forename, string familyName, string gender, int? yearOfBirth)
+        {
+            var query = _context.People.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(forename))
+                query = query.Where(p => p.Forename.Contains(forename));
+
+            if (!string.IsNullOrWhiteSpace(familyName))
+                query = query.Where(p => p.FamilyName.Contains(familyName));
+
+            if (!string.IsNullOrWhiteSpace(gender))
+                query = query.Where(p => p.Gender == gender);
+
+            if (yearOfBirth.HasValue)
+                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+
+            // Add default sorting by Family Name
+            query = query.OrderBy(p => p.FamilyName);
+
+            var people = await query.ToListAsync();
+            return View(people);
         }
     }
 }
