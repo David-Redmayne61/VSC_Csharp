@@ -1,0 +1,258 @@
+@model IEnumerable<FirstProject.Models.Person>
+
+@{
+    ViewData["Title"] = "Search Records";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">Search Records</h2>
+        <div>
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-file-export"></i> Output Options
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="printGrid()">
+                        <i class="fas fa-desktop"></i> Print Preview
+                    </a></li>
+                    <li><a class="dropdown-item" asp-action="ExportToPdf" asp-all-route-data="@Context.Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString())">
+                        <i class="fas fa-file-pdf"></i> Export to PDF
+                    </a></li>
+                    <li><a class="dropdown-item" asp-action="ExportToExcel" asp-all-route-data="@Context.Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString())">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </a></li>
+                </ul>
+            </div>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-home"></i> Return to Home
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form asp-action="Search" method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Forename</label>
+                    <input type="text" name="forename" class="form-control" value="@ViewData["CurrentForename"]">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Family Name</label>
+                    <input type="text" name="familyName" class="form-control" value="@ViewData["CurrentFamilyName"]">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Gender</label>
+                    <select name="gender" class="form-select">
+                        <option value="">All</option>
+                        @{
+                            var currentGender = ViewData["CurrentGender"]?.ToString();
+                        }
+                        <option value="Male" selected="@(currentGender == "Male")">Male</option>
+                        <option value="Female" selected="@(currentGender == "Female")">Female</option>
+                        <option value="PreferNotToSay" selected="@(currentGender == "PreferNotToSay")">Prefer not to say</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Year of Birth</label>
+                    <input type="number" name="yearOfBirth" class="form-control" value="@ViewData["CurrentYearOfBirth"]" min="1900" max="2025">
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <a asp-action="ClearSearch" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-container">
+                    <div class="table-scroll">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <a asp-action="Search" 
+                                           asp-route-sortOrder="@ViewBag.IdSortParam"
+                                           asp-route-forename="@ViewData["CurrentForename"]"
+                                           asp-route-familyName="@ViewData["CurrentFamilyName"]"
+                                           asp-route-gender="@ViewData["CurrentGender"]"
+                                           asp-route-yearOfBirth="@ViewData["CurrentYearOfBirth"]"
+                                           class="text-dark text-decoration-none">
+                                            ID <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a asp-action="Search"
+                                           asp-route-sortOrder="@ViewBag.ForenameSortParam"
+                                           asp-route-forename="@ViewData["CurrentForename"]"
+                                           asp-route-familyName="@ViewData["CurrentFamilyName"]"
+                                           asp-route-gender="@ViewData["CurrentGender"]"
+                                           asp-route-yearOfBirth="@ViewData["CurrentYearOfBirth"]"
+                                           class="text-dark text-decoration-none">
+                                            Forename <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a asp-action="Search"
+                                           asp-route-sortOrder="@ViewBag.FamilyNameSortParam"
+                                           asp-route-forename="@ViewData["CurrentForename"]"
+                                           asp-route-familyName="@ViewData["CurrentFamilyName"]"
+                                           asp-route-gender="@ViewData["CurrentGender"]"
+                                           asp-route-yearOfBirth="@ViewData["CurrentYearOfBirth"]"
+                                           class="text-dark text-decoration-none">
+                                            Family Name <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a asp-action="Search"
+                                           asp-route-sortOrder="@ViewBag.GenderSortParam"
+                                           asp-route-forename="@ViewData["CurrentForename"]"
+                                           asp-route-familyName="@ViewData["CurrentFamilyName"]"
+                                           asp-route-gender="@ViewData["CurrentGender"]"
+                                           asp-route-yearOfBirth="@ViewData["CurrentYearOfBirth"]"
+                                           class="text-dark text-decoration-none">
+                                            Gender <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a asp-action="Search"
+                                           asp-route-sortOrder="@ViewBag.YearOfBirthSortParam"
+                                           asp-route-forename="@ViewData["CurrentForename"]"
+                                           asp-route-familyName="@ViewData["CurrentFamilyName"]"
+                                           asp-route-gender="@ViewData["CurrentGender"]"
+                                           asp-route-yearOfBirth="@ViewData["CurrentYearOfBirth"]"
+                                           class="text-dark text-decoration-none">
+                                            Year of Birth <i class="fas fa-sort"></i>
+                                        </a>
+                                    </th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@item.Id</td>
+                                        <td>@item.Forename</td>
+                                        <td>@item.FamilyName</td>
+                                        <td>@item.Gender</td>
+                                        <td>@item.YearOfBirth</td>
+                                        <td class="actions-column">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Edit</a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer text-muted text-end mt-3">
+            Total Records: @Model.Count()
+        </div>
+    }
+    else if (ViewContext.HttpContext.Request.Query.Count > 0)
+    {
+        <div class="alert alert-info">
+            No records found matching your search criteria.
+        </div>
+    }
+</div>
+
+<li class="nav-item">
+    <a class="nav-link text-dark" asp-controller="Home" asp-action="Search">
+        <i class="fas fa-search"></i> Search
+    </a>
+</li>
+
+@section Scripts {
+    <script>
+        function printGrid() {
+            const printStyles = `
+                <style>
+                    body {
+                        padding: 20px;
+                        font-family: Arial, sans-serif;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 1rem;
+                    }
+                    .table th, .table td {
+                        padding: 8px;
+                        border: 1px solid #dee2e6;
+                        text-align: left;
+                    }
+                    .table thead th {
+                        background-color: #f8f9fa;
+                        font-weight: bold;
+                    }
+                    .actions-column, .btn, .fa-sort {
+                        display: none !important;
+                    }
+                    .footer {
+                        position: fixed;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        width: 100%;
+                        text-align: center;
+                        padding: 10px;
+                        font-size: 12px;
+                        border-top: 1px solid #dee2e6;
+                        display: flex;
+                        justify-content: space-between;
+                        padding-left: 20px;
+                        padding-right: 20px;
+                    }
+                    @@page {
+                        margin: 20mm;
+                        size: auto;
+                    }
+                </style>
+            `;
+
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            const currentDateTime = new Date().toLocaleString();
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Search Results</title>
+                    ${printStyles}
+                </head>
+                <body>
+                    <h2>Search Results</h2>
+                    ${document.querySelector('.table-container').innerHTML}
+                    <div class="footer">
+                        <span>${currentDateTime}</span>
+                        <span>First Project</span>
+                        <span></span>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+            printWindow.focus();
+            
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+    </script>
+}
