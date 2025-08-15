@@ -2,57 +2,65 @@
     ViewData["Title"] = "Import Data";
 }
 
-<div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">Import Data</h2>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
-            <i class="fas fa-home"></i> Return to Home
-        </a>
-    </div>
+<div class="container">
+    <h2 class="mb-4">Import People Data</h2>
 
-    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @ViewBag.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+    @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @ViewBag.SuccessMessage
+            @TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <div class="card shadow">
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <pre class="mb-0">@TempData["WarningMessage"]</pre>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Import Excel File</h4>
+        </div>
         <div class="card-body">
-            <form asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+            <div class="mb-4">
+                <h5>File Requirements:</h5>
+                <ul class="list-group">
+                    <li class="list-group-item">Excel file format (.xlsx)</li>
+                    <li class="list-group-item">First row must contain headers</li>
+                    <li class="list-group-item">Columns must be in this order:
+                        <ol class="mb-0 mt-2">
+                            <li>Forename</li>
+                            <li>Family Name</li>
+                            <li>Gender</li>
+                            <li>Year of Birth (numeric)</li>
+                        </ol>
+                    </li>
+                </ul>
+            </div>
+            
+            <form asp-controller="Home" asp-action="Import" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
                 <div class="mb-3">
-                    <label class="form-label">Select Excel File</label>
-                    <input type="file" class="form-control" name="file" accept=".xlsx" required>
-                    <div class="form-text">Only .xlsx files are supported</div>
+                    <label for="file" class="form-label">Select Excel File</label>
+                    <input type="file" class="form-control" id="file" name="file" accept=".xlsx" required />
+                    <div class="form-text">Maximum file size: 10MB</div>
                 </div>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-file-import"></i> Import Data
+                    <i class="fas fa-upload"></i> Import Data
                 </button>
             </form>
-        </div>
-    </div>
-
-    <div class="card shadow mt-4">
-        <div class="card-body">
-            <h5 class="card-title">Import Guidelines</h5>
-            <ul class="list-unstyled">
-                <li><i class="fas fa-info-circle text-primary me-2"></i>The Excel file should have the following columns:</li>
-                <li class="ms-4">• Forename (required)</li>
-                <li class="ms-4">• Family Name (required)</li>
-                <li class="ms-4">• Gender (Male/Female/PreferNotToSay)</li>
-                <li class="ms-4">• Year of Birth (1900-2025)</li>
-                <li class="mt-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>First row should contain column headers</li>
-                <li><i class="fas fa-check-circle text-success me-2"></i>Duplicate records will be skipped</li>
-            </ul>
         </div>
     </div>
 </div>
