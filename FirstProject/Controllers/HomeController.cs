@@ -1,38 +1,55 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using System.Text; // For StringBuilder
+using System.Drawing; // For Color
+using OfficeOpenXml; // For ExcelPackage
 using FirstProject.Models;
 using FirstProject.Data;
-using System.Threading.Tasks;
-using System.Text;
-using OfficeOpenXml;
-using System.Drawing;
-using DinkToPdf;
-using DinkToPdf.Contracts;
 using FirstProject.Services;
-using FirstProject.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FirstProject.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
-        private readonly PdfService _pdfService;
+        private readonly PdfService _pdfService; // Add this field
 
         public HomeController(
             ILogger<HomeController> logger, 
             ApplicationDbContext context,
-            PdfService pdfService)
+            PdfService pdfService) // Add pdfService parameter
         {
             _logger = logger;
             _context = context;
             _pdfService = pdfService;
         }
 
-        public IActionResult Index()
+        // Keep only one Index action method
+        public async Task<IActionResult> Index(string forename, string familyName, string gender, int? yearOfBirth)
         {
-            return View();
+            var query = _context.People.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(forename))
+                query = query.Where(p => p.Forename.Contains(forename));
+
+            if (!string.IsNullOrWhiteSpace(familyName))
+                query = query.Where(p => p.FamilyName.Contains(familyName));
+
+            if (!string.IsNullOrWhiteSpace(gender))
+                query = query.Where(p => p.Gender == gender);
+
+            if (yearOfBirth.HasValue)
+                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+
+            // Add default sorting
+            query = query.OrderBy(p => p.FamilyName);
+
+            var people = await query.ToListAsync();
+            return View(people);
         }
 
         public IActionResult Privacy()
@@ -396,27 +413,171 @@ namespace FirstProject.Controllers
             return File(pdf, "application/pdf", $"export_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
         }
 
-        public async Task<IActionResult> Index(string forename, string familyName, string gender, int? yearOfBirth)
+        [HttpGet]
+        [Authorize]  // This ensures only authenticated users can access
+        public IActionResult Import()
         {
-            var query = _context.People.AsQueryable();
+            return View();
+        }
 
-            if (!string.IsNullOrWhiteSpace(forename))
-                query = query.Where(p => p.Forename.Contains(forename));
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Import(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Please select a file to import";
+                return View();
+            }
 
-            if (!string.IsNullOrWhiteSpace(familyName))
-                query = query.Where(p => p.FamilyName.Contains(familyName));
+            try
+            {
+                using var stream = new MemoryStream();
+                await file.CopyToAsync(stream);
+                stream.Position = 0;
 
-            if (!string.IsNullOrWhiteSpace(gender))
-                query = query.Where(p => p.Gender == gender);
+                using var package = new ExcelPackage(stream);
+                var worksheet = package.Workbook.Worksheets[0];
+                var rowCount = worksheet.Dimension?.Rows ?? 0;
 
-            if (yearOfBirth.HasValue)
-                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+                int successCount = 0;
+                int duplicateCount = 0;
+                var duplicates = new List<string>();
+                var otherErrors = new List<string>();
 
-            // Add default sorting by Family Name
-            query = query.OrderBy(p => p.FamilyName);
+                // Start from row 2 (skip header)
+                for (int row = 2; row <= rowCount; row++)
+                {
+                    try
+                    {
+                        var forename = worksheet.Cells[row, 1].Text?.Trim();
+                        var familyName = worksheet.Cells[row, 2].Text?.Trim();
+                        var gender = worksheet.Cells[row, 3].Text?.Trim();
+                        var yearOfBirthText = worksheet.Cells[row, 4].Text?.Trim();
 
-            var people = await query.ToListAsync();
-            return View(people);
+                        if (string.IsNullOrEmpty(forename) || string.IsNullOrEmpty(familyName))
+                        {
+                            otherErrors.Add($"Row {row}: Forename and Family Name are required");
+                            continue;
+                        }
+
+                        if (!int.TryParse(yearOfBirthText, out int yearOfBirth))
+                        {
+                            otherErrors.Add($"Row {row}: Invalid Year of Birth");
+                            continue;
+                        }
+
+                        // Check for duplicates
+                        var isDuplicate = await _context.People.AnyAsync(p => 
+                            p.Forename.ToLower() == forename.ToLower() && 
+                            p.FamilyName.ToLower() == familyName.ToLower());
+
+                        if (isDuplicate)
+                        {
+                            duplicateCount++;
+                            duplicates.Add($"{forename} {familyName}");
+                            continue;
+                        }
+
+                        var person = new Person
+                        {
+                            Forename = forename,
+                            FamilyName = familyName,
+                            Gender = gender ?? "",
+                            YearOfBirth = yearOfBirth
+                        };
+
+                        _context.People.Add(person);
+                        successCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        otherErrors.Add($"Row {row}: {ex.Message}");
+                    }
+                }
+
+                if (successCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Successfully imported {successCount} records.";
+                }
+
+                if (duplicateCount > 0)
+                {
+                    var duplicateMessage = $"{duplicateCount} duplicate entries found:\n";
+                    if (duplicates.Count > 5)
+                    {
+                        // Show first 5 duplicates only
+                        duplicateMessage += string.Join(", ", duplicates.Take(5));
+                        duplicateMessage += $", and {duplicateCount - 5} more...";
+                    }
+                    else
+                    {
+                        duplicateMessage += string.Join(", ", duplicates);
+                    }
+                    TempData["WarningMessage"] = duplicateMessage;
+                }
+
+                if (otherErrors.Any())
+                {
+                    TempData["ErrorMessage"] = $"Errors during import:\n{string.Join("\n", otherErrors)}";
+                }
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Import failed: {ex.Message}";
+                return View();
+            }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> DeleteMultiple()
+        {
+            var people = await _context.People
+                .OrderBy(p => p.FamilyName)
+                .ThenBy(p => p.Forename)
+                .ToListAsync();
+
+            var viewModel = new PeopleViewModel
+            {
+                People = people.Select(p => new PersonViewModel { Person = p }).ToList()
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSelected(PeopleViewModel model)
+        {
+            if (model?.People == null || !model.People.Any(p => p.IsSelected))
+            {
+                TempData["ErrorMessage"] = "No records were selected for deletion.";
+                return RedirectToAction(nameof(DeleteMultiple));
+            }
+
+            var selectedIds = model.People
+                .Where(p => p.IsSelected)
+                .Select(p => p.Person.Id)
+                .ToList();
+
+            var peopleToDelete = await _context.People
+                .Where(p => selectedIds.Contains(p.Id))
+                .ToListAsync();
+
+            if (peopleToDelete.Any())
+            {
+                _context.People.RemoveRange(peopleToDelete);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Successfully deleted {peopleToDelete.Count} records.";
+            }
+
+            return RedirectToAction(nameof(DeleteMultiple));
         }
     }
 }

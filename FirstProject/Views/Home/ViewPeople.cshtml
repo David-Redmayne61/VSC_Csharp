@@ -1,4 +1,4 @@
-@model IEnumerable<FirstProject.Models.Person>
+@model IEnumerable<Person>
 
 @{
     ViewData["Title"] = "View People";
@@ -91,6 +91,12 @@
                 Total Records: @Model.Count()
             </div>
         }
+    </div>
+
+    <div class="mb-3">
+        <a asp-action="DeleteMultiple" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Delete Records
+        </a>
     </div>
 </div>
 

@@ -1,0 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
+
+namespace dmayne.VSC.VSC_Csharp.FirstProject.Controllers
+{
+    [Authorize]
+    public class HomeController : Controller
+    {
+        // ...existing code...
+    }
+}

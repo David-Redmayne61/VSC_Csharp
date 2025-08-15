@@ -1,19 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using FirstProject.Data;
+using FirstProject.Services;
 using OfficeOpenXml;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using System.Runtime.InteropServices;
-using FirstProject.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure EPPlus license
-ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    });
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllersWithViews();
 
@@ -54,6 +65,23 @@ builder.Services.AddSingleton<PdfService>();
 
 var app = builder.Build();
 
+// Add this block after app.Build() but before other middleware
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var authService = services.GetRequiredService<IAuthService>();  // Changed from AuthService to IAuthService
+        DbInitializer.Initialize(context, authService);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -64,6 +92,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
