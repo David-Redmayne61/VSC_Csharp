@@ -1,72 +1,38 @@
+// Move all using directives to the top of the file to resolve CS1529  
+using DinkToPdf.Contracts;
 using Microsoft.EntityFrameworkCore;
 using FirstProject.Data;
 using FirstProject.Services;
 using OfficeOpenXml;
 using DinkToPdf;
-using DinkToPdf.Contracts;
-using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Authentication.Cookies;
+
+//ExcelPackage.License = new NonCommercialLicense();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure EPPlus license
-OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-
-// Add services to the container.
+// Add services to the container.  
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-    });
+  .AddCookie(options =>
+  {
+      options.LoginPath = "/Account/Login";
+      options.LogoutPath = "/Account/Logout";
+      options.ExpireTimeSpan = TimeSpan.FromHours(8);
+  });
 
-builder.Services.AddScoped<IAuthService, AuthService>();
-
-builder.Services.AddControllersWithViews();
-
-// Configure PDF converter
-var architecture = Environment.Is64BitProcess ? "x64" : "x86";
-var libraryPath = Path.Combine(Directory.GetCurrentDirectory(), "native", architecture);
-Directory.CreateDirectory(libraryPath);
-
-var libwkhtmltoxFile = Path.Combine(libraryPath, "libwkhtmltox.dll");
-if (!File.Exists(libwkhtmltoxFile))
-{
-    var sourceFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "native", architecture, "libwkhtmltox.dll");
-    if (File.Exists(sourceFile))
-    {
-        File.Copy(sourceFile, libwkhtmltoxFile, true);
-    }
-    else
-    {
-        throw new FileNotFoundException($"Required library not found: {sourceFile}");
-    }
-}
-
-// Update PATH environment variable
-var currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-if (!currentPath.Contains(libraryPath))
-{
-    Environment.SetEnvironmentVariable("PATH", $"{currentPath}{Path.PathSeparator}{libraryPath}");
-}
-
-// Configure Qt environment variables to suppress messages
-Environment.SetEnvironmentVariable("QT_LOGGING_RULES", "qt.qpa.*=false");
-Environment.SetEnvironmentVariable("QT_LOGGING_TO_CONSOLE", "0");
-Environment.SetEnvironmentVariable("QT_ENABLE_STDERR_LOGGING", "0");
-
-// Register PDF services
+// Register PDF services  
 builder.Services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
 builder.Services.AddSingleton<PdfService>();
-
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddAuthorization(); // Add this line to register the default authorization services
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Middleware to set anti-caching headers for authenticated requests
+// Middleware to set anti-caching headers for authenticated requests  
 app.Use(async (context, next) =>
 {
     if (context.User?.Identity?.IsAuthenticated == true)
@@ -78,14 +44,14 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Add this block after app.Build() but before other middleware
+// Database seeding
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        var authService = services.GetRequiredService<IAuthService>();  // Changed from AuthService to IAuthService
+        var authService = services.GetRequiredService<IAuthService>();
         DbInitializer.Initialize(context, authService);
     }
     catch (Exception ex)
@@ -113,4 +79,3 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
