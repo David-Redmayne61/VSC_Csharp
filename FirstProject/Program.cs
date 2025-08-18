@@ -63,7 +63,20 @@ Environment.SetEnvironmentVariable("QT_ENABLE_STDERR_LOGGING", "0");
 builder.Services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
 builder.Services.AddSingleton<PdfService>();
 
+
 var app = builder.Build();
+
+// Middleware to set anti-caching headers for authenticated requests
+app.Use(async (context, next) =>
+{
+    if (context.User?.Identity?.IsAuthenticated == true)
+    {
+        context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+    }
+    await next();
+});
 
 // Add this block after app.Build() but before other middleware
 using (var scope = app.Services.CreateScope())

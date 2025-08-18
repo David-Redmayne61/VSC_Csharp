@@ -1,0 +1,109 @@
+@using FirstProject.Models.ViewModels
+@using Microsoft.EntityFrameworkCore
+@model ImportResultViewModel
+@{
+    ViewData["Title"] = "Import Errors";
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4>Import Results</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                Successfully imported @Model.SuccessCount users
+            </div>
+
+            <p>
+                Duplicates count: @Model.Duplicates?.Count ?? 0
+            </p>
+
+            @if (Model.Duplicates != null && Model.Duplicates.Any())
+            {
+                <div class="alert alert-warning">
+                    <strong>@Model.Duplicates.Count duplicate entries found:</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Line #</th>
+                                <th>Username</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var dup in Model.Duplicates)
+                            {
+                                <tr>
+                                    <td>@dup.LineNumber</td>
+                                    <td>@dup.Username</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            @if (Model.Errors != null && Model.Errors.Any())
+            {
+                <div class="alert alert-danger">
+                    <strong>@Model.Errors.Count error(s) found:</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Line #</th>
+                                <th>Content</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var error in Model.Errors)
+                            {
+                                <tr>
+                                    <td>@error.LineNumber</td>
+                                    <td><code>@error.Line</code></td>
+                                    <td>@error.Error</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <a asp-action="UserManagement" class="btn btn-primary mt-3">
+                <i class="bi bi-arrow-left"></i> Back to User Management
+            </a>
+        </div>
+    </div>
+</div>
+
+@inject FirstProject.Data.ApplicationDbContext _context
+
+@* Remove ProcessImportAsync and ImportErrors from the Razor view. 
+   Move them to your AdminController as controller actions. *@
+
+public class DuplicateEntry
+{
+    public string Username { get; set; } = string.Empty;
+    public int LineNumber { get; set; }
+    public DateTime AttemptedImport { get; set; }
+}
+
+@* Cache-control headers should be set in the controller, not in the Razor view. *@
+
+[Authorize]
+public class AdminController : Controller
+{
+    // ...existing code...
+}
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/Login";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // or your preferred timeout
+    options.SlidingExpiration = true;
+});
