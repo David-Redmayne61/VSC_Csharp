@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,5 +17,6 @@ namespace FirstProject.Models
         public string PasswordHash { get; set; } = string.Empty;
 
         public DateTime Created { get; set; } = DateTime.Now;
+        public bool RequiresPasswordChange { get; set; }
     }
 }

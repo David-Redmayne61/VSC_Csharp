@@ -43,13 +43,37 @@
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">Welcome @User.Identity.Name!</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Logout</button>
-                                </form>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="accountDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                                    @if (User.Identity.Name?.ToLower() == "admin")
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Account" asp-action="ChangeAdminPassword">
+                                                <i class="bi bi-key"></i> Change Admin Password
+                                            </a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
+                                                <i class="bi bi-key"></i> Change Password
+                                            </a>
+                                        </li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="bi bi-box-arrow-right"></i> Logout
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </li>
                         </ul>
                     }
