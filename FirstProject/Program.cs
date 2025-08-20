@@ -29,6 +29,7 @@ builder.Services.AddSingleton<PdfService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddAuthorization(); // Add this line to register the default authorization services
 builder.Services.AddControllersWithViews();
+builder.WebHost.UseIISIntegration();
 
 var app = builder.Build();
 
