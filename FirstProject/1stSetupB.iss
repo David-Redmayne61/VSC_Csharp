@@ -12,7 +12,7 @@ SolidCompression=yes
 Source: "publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\FirstProject"; Filename: "{app}\FirstProject.exe"; WorkingDir: "{app}"; ShowCmd: sw_minimize
+Name: "{group}\FirstProject"; Filename: "{app}\FirstProject.exe"; WorkingDir: "{app}"; Flags: runminimized
 
 [Run]
 Filename: "explorer.exe"; Parameters: "{app}"; Description: "Open install folder"; Flags: postinstall skipifsilent
