@@ -207,11 +207,38 @@ namespace FirstProject.Controllers
         {
             var query = _context.People.AsQueryable();
 
+            // Apply search filters with wildcard support
             if (!string.IsNullOrWhiteSpace(forename))
-                query = query.Where(p => p.Forename.Contains(forename));
+            {
+                if (forename.Contains("*") || forename.Contains("?"))
+                {
+                    var forenamePattern = forename
+                        .Replace("*", "%")
+                        .Replace("?", "_")
+                        .Replace("[", "[[]");
+                    query = query.Where(p => EF.Functions.Like(p.Forename, forenamePattern));
+                }
+                else
+                {
+                    query = query.Where(p => p.Forename.Contains(forename));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(familyName))
-                query = query.Where(p => p.FamilyName.Contains(familyName));
+            {
+                if (familyName.Contains("*") || familyName.Contains("?"))
+                {
+                    var familyNamePattern = familyName
+                        .Replace("*", "%")
+                        .Replace("?", "_")
+                        .Replace("[", "[[]");
+                    query = query.Where(p => EF.Functions.Like(p.FamilyName, familyNamePattern));
+                }
+                else
+                {
+                    query = query.Where(p => p.FamilyName.Contains(familyName));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(gender))
                 query = query.Where(p => p.Gender == gender);
@@ -294,12 +321,42 @@ namespace FirstProject.Controllers
 
             var query = _context.People.AsQueryable();
 
-            // Apply search filters
+            // Apply search filters with wildcard support
             if (!string.IsNullOrWhiteSpace(forename))
-                query = query.Where(p => p.Forename.Contains(forename));
+            {
+                if (forename.Contains("*") || forename.Contains("?"))
+                {
+                    // Convert wildcards to SQL LIKE patterns
+                    var forenamePattern = forename
+                        .Replace("*", "%")    // * matches any sequence of characters
+                        .Replace("?", "_")    // ? matches any single character
+                        .Replace("[", "[[]"); // Escape literal brackets if needed
+                    query = query.Where(p => EF.Functions.Like(p.Forename, forenamePattern));
+                    ViewBag.WildcardUsed = true;
+                }
+                else
+                {
+                    query = query.Where(p => p.Forename.Contains(forename));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(familyName))
-                query = query.Where(p => p.FamilyName.Contains(familyName));
+            {
+                if (familyName.Contains("*") || familyName.Contains("?"))
+                {
+                    // Convert wildcards to SQL LIKE patterns
+                    var familyNamePattern = familyName
+                        .Replace("*", "%")    // * matches any sequence of characters
+                        .Replace("?", "_")    // ? matches any single character
+                        .Replace("[", "[[]"); // Escape literal brackets if needed
+                    query = query.Where(p => EF.Functions.Like(p.FamilyName, familyNamePattern));
+                    ViewBag.WildcardUsed = true;
+                }
+                else
+                {
+                    query = query.Where(p => p.FamilyName.Contains(familyName));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(gender))
                 query = query.Where(p => p.Gender == gender);
@@ -335,11 +392,38 @@ namespace FirstProject.Controllers
         {
             var query = _context.People.AsQueryable();
 
+            // Apply search filters with wildcard support
             if (!string.IsNullOrWhiteSpace(forename))
-                query = query.Where(p => p.Forename.Contains(forename));
+            {
+                if (forename.Contains("*") || forename.Contains("?"))
+                {
+                    var forenamePattern = forename
+                        .Replace("*", "%")
+                        .Replace("?", "_")
+                        .Replace("[", "[[]");
+                    query = query.Where(p => EF.Functions.Like(p.Forename, forenamePattern));
+                }
+                else
+                {
+                    query = query.Where(p => p.Forename.Contains(forename));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(familyName))
-                query = query.Where(p => p.FamilyName.Contains(familyName));
+            {
+                if (familyName.Contains("*") || familyName.Contains("?"))
+                {
+                    var familyNamePattern = familyName
+                        .Replace("*", "%")
+                        .Replace("?", "_")
+                        .Replace("[", "[[]");
+                    query = query.Where(p => EF.Functions.Like(p.FamilyName, familyNamePattern));
+                }
+                else
+                {
+                    query = query.Where(p => p.FamilyName.Contains(familyName));
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(gender))
                 query = query.Where(p => p.Gender == gender);

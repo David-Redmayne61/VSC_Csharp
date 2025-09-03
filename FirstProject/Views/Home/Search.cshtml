@@ -30,6 +30,19 @@
         </div>
     </div>
 
+    <!-- Wildcard Search Help -->
+    <div class="card border-info shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle text-info me-2"></i>
+                <small class="text-muted">
+                    <strong>Wildcard Search:</strong> Use <code>*</code> for multiple characters (e.g., <code>John*</code> finds "John", "Johnson") 
+                    or <code>?</code> for single character (e.g., <code>J?hn</code> finds "John", "Jahn")
+                </small>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow mb-4">
         <div class="card-body">
             <form asp-action="Search" method="get" class="row g-3">
@@ -66,6 +79,13 @@
                     </a>
                 </div>
             </form>
+            
+            @if (ViewBag.WildcardUsed != null && ViewBag.WildcardUsed)
+            {
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-info-circle"></i> Wildcard search active: <code>*</code> matches any characters, <code>?</code> matches single character
+                </div>
+            }
         </div>
     </div>
 
