@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-info-circle"></i> About FirstProject
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Application Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Name:</strong></td>
+                                    <td>FirstProject</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Version:</strong></td>
+                                    <td>1.1.0</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Description:</strong></td>
+                                    <td>Database Management Application with Wildcard Search</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Framework:</strong></td>
+                                    <td>ASP.NET Core 8.0</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Database:</strong></td>
+                                    <td>SQL Server LocalDB</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Features</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle text-success"></i> User Management</li>
+                                <li><i class="bi bi-check-circle text-success"></i> Password Management</li>
+                                <li><i class="bi bi-check-circle text-success"></i> Data Import/Export</li>
+                                <li><i class="bi bi-check-circle text-success"></i> Wildcard Search</li>
+                                <li><i class="bi bi-check-circle text-success"></i> PDF/Excel Export</li>
+                                <li><i class="bi bi-check-circle text-success"></i> Secure Authentication</li>
+                                <li><i class="bi bi-check-circle text-success"></i> Anti-caching Security</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Wildcard Search Help</h5>
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-search"></i> Wildcard Search Patterns:</h6>
+                                <ul class="mb-0">
+                                    <li><code>*</code> - Matches any sequence of characters</li>
+                                    <li><code>?</code> - Matches any single character</li>
+                                </ul>
+                                <hr class="my-2">
+                                <strong>Examples:</strong>
+                                <ul class="mb-0">
+                                    <li><code>John*</code> - Finds "John", "Johnson", "Johnny"</li>
+                                    <li><code>*son</code> - Finds "Johnson", "Peterson", "Anderson"</li>
+                                    <li><code>J?hn</code> - Finds "John", "Jahn"</li>
+                                    <li><code>Sm?th</code> - Finds "Smith", "Smyth"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p class="text-muted">
+                            <small>
+                                <i class="bi bi-calendar"></i> Built: @DateTime.Now.ToString("MMMM yyyy")<br>
+                                <i class="bi bi-code-slash"></i> Powered by ASP.NET Core<br>
+                                <i class="bi bi-c-circle"></i> David Redmayne 2025
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                        <i class="bi bi-house"></i> Return to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
