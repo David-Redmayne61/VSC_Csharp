@@ -663,5 +663,10 @@ namespace FirstProject.Controllers
 
             return RedirectToAction(nameof(DeleteMultiple));
         }
+
+        public IActionResult About()
+        {
+            return View();
+        }
     }
 }

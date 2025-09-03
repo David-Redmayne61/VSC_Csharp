@@ -8,11 +8,13 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
     <Authors>Your Name</Authors>
     <Company>Your Company</Company>
     <Product>First Project</Product>
-    <Description>Database Management Application</Description>
+    <Description>Database Management Application with Wildcard Search</Description>
   </PropertyGroup>
 
   <ItemGroup>

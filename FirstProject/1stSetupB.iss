@@ -1,7 +1,8 @@
+
 [Setup]
 AppName=FirstProject
-AppVersion=1.0
-DefaultDirName={pf}\FirstProject
+AppVersion={#GetFileVersion("publish\FirstProject.exe")}
+DefaultDirName={autopf}\FirstProject
 DefaultGroupName=FirstProject
 OutputDir=.
 OutputBaseFilename=FirstProjectSetup
