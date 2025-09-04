@@ -8,9 +8,9 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <Version>1.1.0</Version>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
     <Authors>Your Name</Authors>
     <Company>Your Company</Company>
     <Product>First Project</Product>
@@ -21,8 +21,7 @@
     <PackageReference Include="Agentix.Providers.Claude" Version="0.2.0" />
     <PackageReference Include="Anthropic.SDK" Version="5.5.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageReference Include="DinkToPdf" Version="1.0.8" />
-    <PackageReference Include="EPPlus" Version="8.1.0" />
+    <PackageReference Include="EPPlus" Version="6.2.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -37,23 +36,13 @@
     <PackageReference Include="Microsoft.Playwright.MSTest" Version="1.54.0" />
     <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.54.0" />
     <PackageReference Include="Microsoft.Playwright.TestAdapter" Version="1.54.0" />
+    <PackageReference Include="PuppeteerSharp" Version="13.0.0" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.8" />
     <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
     <PackageReference Include="System.Text.Encoding.Extensions" Version="4.3.0" />
     <PackageReference Include="Microsoft.Win32.Primitives" Version="4.3.0" />
     <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
     <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="native\x64\libwkhtmltox.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>x64\libwkhtmltox.dll</Link>
-    </None>
-    <None Include="native\x86\libwkhtmltox.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>x86\libwkhtmltox.dll</Link>
-    </None>
   </ItemGroup>
 
 </Project>

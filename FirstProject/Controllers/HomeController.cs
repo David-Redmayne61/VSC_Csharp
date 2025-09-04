@@ -246,6 +246,9 @@ namespace FirstProject.Controllers
             if (yearOfBirth.HasValue)
                 query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
 
+            // Apply default sorting by Family Name A>Z (same as Search page default)
+            query = query.OrderBy(p => p.FamilyName);
+
             var people = await query.ToListAsync();
             
             using var package = new ExcelPackage();
@@ -430,6 +433,9 @@ namespace FirstProject.Controllers
 
             if (yearOfBirth.HasValue)
                 query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
+
+            // Apply default sorting by Family Name A>Z (same as Search page default)
+            query = query.OrderBy(p => p.FamilyName);
 
             var people = await query.ToListAsync();
 

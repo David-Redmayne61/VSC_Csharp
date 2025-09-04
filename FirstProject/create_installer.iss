@@ -1,6 +1,6 @@
 [Setup]
 AppName=First Project
-AppVersion=1.0.0
+AppVersion=1.1.0
 WizardStyle=modern
 DefaultDirName={autopf}\First Project
 DefaultGroupName=First Project
@@ -8,9 +8,11 @@ OutputBaseFilename=FirstProjectSetup
 Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
+AppPublisher=David Redmayne
+AppCopyright=© David Redmayne 2025
 
 [Files]
-Source: "bin\Release\net8.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\First Project"; Filename: "{app}\FirstProject.exe"
