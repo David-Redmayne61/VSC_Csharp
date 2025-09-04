@@ -1,66 +1,50 @@
-using DinkToPdf;
-using DinkToPdf.Contracts;
-using System.Runtime.InteropServices;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
 
 namespace FirstProject.Services
 {
     public class PdfService
     {
-        private readonly IConverter _converter;
-        private static readonly object _lock = new object();
-
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetStdHandle(int nStdHandle);
-
-        [DllImport("kernel32.dll")]
-        private static extern bool SetStdHandle(int nStdHandle, IntPtr handle);
-
-        private const int STD_ERROR_HANDLE = -12;
-
-        public PdfService(IConverter converter)
+        public async Task<byte[]> GeneratePdfAsync(string htmlContent)
         {
-            _converter = converter;
+            // Download Chromium if not already downloaded
+            await new BrowserFetcher().DownloadAsync();
+
+            // Launch browser
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+                Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+            });
+
+            // Create new page
+            await using var page = await browser.NewPageAsync();
+
+            // Set content and wait for page to load
+            await page.SetContentAsync(htmlContent);
+            await page.WaitForTimeoutAsync(1000); // Wait for content to render
+
+            // Generate PDF with updated API - use PdfDataAsync for byte array
+            var pdfBytes = await page.PdfDataAsync(new PdfOptions
+            {
+                Format = PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new MarginOptions
+                {
+                    Top = "1cm",
+                    Right = "1cm", 
+                    Bottom = "1cm",
+                    Left = "1cm"
+                }
+            });
+
+            return pdfBytes ?? Array.Empty<byte>();
         }
 
+        // Keep the old synchronous method for backward compatibility but make it call the async version
         public byte[] GeneratePdf(string htmlContent)
         {
-            var document = new HtmlToPdfDocument()
-            {
-                GlobalSettings = {
-                    ColorMode = ColorMode.Color,
-                    Orientation = Orientation.Portrait,
-                    PaperSize = PaperKind.A4,
-                    Margins = new MarginSettings { Top = 25, Bottom = 25, Left = 25, Right = 25 }
-                },
-                Objects = {
-                    new ObjectSettings {
-                        PagesCount = true,
-                        HtmlContent = htmlContent,
-                        WebSettings = { DefaultEncoding = "utf-8" },
-                        FooterSettings = { 
-                            Right = "Page [page] of [topage]",
-                            Line = true,
-                            Spacing = 2.812
-                        }
-                    }
-                }
-            };
-
-            lock (_lock)
-            {
-                var originalErrorHandle = GetStdHandle(STD_ERROR_HANDLE);
-                var nullHandle = new IntPtr(-1);
-                
-                try
-                {
-                    SetStdHandle(STD_ERROR_HANDLE, nullHandle);
-                    return _converter.Convert(document);
-                }
-                finally
-                {
-                    SetStdHandle(STD_ERROR_HANDLE, originalErrorHandle);
-                }
-            }
+            return GeneratePdfAsync(htmlContent).GetAwaiter().GetResult();
         }
     }
 }

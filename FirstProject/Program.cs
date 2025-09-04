@@ -1,13 +1,12 @@
 // Move all using directives to the top of the file to resolve CS1529  
-using DinkToPdf.Contracts;
 using Microsoft.EntityFrameworkCore;
 using FirstProject.Data;
 using FirstProject.Services;
 using OfficeOpenXml;
-using DinkToPdf;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
-//ExcelPackage.License = new NonCommercialLicense();
+// Set EPPlus license context for non-commercial use
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +23,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
   });
 
 // Register PDF services  
-builder.Services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
 builder.Services.AddSingleton<PdfService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddAuthorization(); // Add this line to register the default authorization services
