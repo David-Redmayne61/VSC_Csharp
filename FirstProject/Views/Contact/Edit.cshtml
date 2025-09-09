@@ -1,0 +1,221 @@
+@model FirstProject.Models.ViewModels.CustomerContactViewModel
+
+@{
+    ViewData["Title"] = "Edit Customer Call";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Contact" asp-action="Index">Customer Calls</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit @Model.CallNumber</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header Section -->
+            <div class="text-center mb-4">
+                <h2 class="mb-1">
+                    <i class="bi bi-pencil text-warning me-2"></i>
+                    Edit Customer Call
+                </h2>
+                <p class="text-muted">Modify call details for Call Number: <strong>@Model.CallNumber</strong></p>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="row">
+                            <!-- Call Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CallNumber" class="form-label">
+                                    <i class="bi bi-hash me-1"></i>
+                                    @Html.DisplayNameFor(model => model.CallNumber)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="CallNumber" class="form-control" />
+                                <div class="form-text">Unique identifier for this contact</div>
+                                <span asp-validation-for="CallNumber" class="text-danger"></span>
+                            </div>
+
+                            <!-- Contact Date -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ContactDate" class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    @Html.DisplayNameFor(model => model.ContactDate)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="ContactDate" type="datetime-local" class="form-control" />
+                                <span asp-validation-for="ContactDate" class="text-danger"></span>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Status" class="form-label">
+                                    <i class="bi bi-flag me-1"></i>
+                                    @Html.DisplayNameFor(model => model.Status)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <select asp-for="Status" class="form-select" id="statusSelect" onchange="updateStatusLabel()" style="width: 150px;">
+                                        <option value="@((int)FirstProject.Models.ContactStatus.Open)">Open</option>
+                                        <option value="@((int)FirstProject.Models.ContactStatus.Pending)">Pending</option>
+                                        <option value="@((int)FirstProject.Models.ContactStatus.Closed)">Closed</option>
+                                    </select>
+                                    <span id="statusLabel" class="fw-bold" style="min-width: 65px;">Status</span>
+                                </div>
+                                <div class="form-text">Update the status of this contact</div>
+                                <span asp-validation-for="Status" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Customer Selection -->
+                        <div class="mb-3">
+                            <label asp-for="PersonId" class="form-label">
+                                <i class="bi bi-person me-1"></i>
+                                @Html.DisplayNameFor(model => model.PersonId)
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="PersonId" asp-items="Model.Customers" class="form-select">
+                                <option value="">-- Select a Customer --</option>
+                            </select>
+                            <span asp-validation-for="PersonId" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <!-- Customer Email -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CustomerEmail" class="form-label">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    @Html.DisplayNameFor(model => model.CustomerEmail)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="CustomerEmail" type="email" class="form-control" />
+                                <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+                            </div>
+
+                            <!-- Customer Phone -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CustomerPhone" class="form-label">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    @Html.DisplayNameFor(model => model.CustomerPhone)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="CustomerPhone" type="tel" class="form-control" />
+                                <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Reason for Contact -->
+                        <div class="mb-4">
+                            <label asp-for="ReasonForContact" class="form-label">
+                                <i class="bi bi-chat-text me-1"></i>
+                                @Html.DisplayNameFor(model => model.ReasonForContact)
+                                <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="ReasonForContact" id="reasonEditor" class="form-control" rows="8"></textarea>
+                            <div class="form-text">
+                                Use the formatting tools above to style your text. Maximum 5000 characters.
+                            </div>
+                            <span asp-validation-for="ReasonForContact" class="text-danger"></span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Back to Customer Calls
+                            </a>
+                            <div>
+                                <a asp-action="Details" asp-route-id="@ViewBag.ContactId" class="btn btn-outline-info me-2">
+                                    <i class="bi bi-eye me-2"></i>
+                                    View Details
+                                </a>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-save me-2"></i>
+                                    Update Customer Call
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <!-- TinyMCE Cloud with API Key -->
+    <script src="https://cdn.tiny.cloud/1/7e04933v6vsm9jm5p6vd9jqw06ohxw8e0wmeszmmd3ziv4aw/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    
+    <script>
+        // Initialize TinyMCE
+        tinymce.init({
+            selector: '#reasonEditor',
+            height: 300,
+            menubar: false,
+            plugins: [
+                'lists', 'link', 'searchreplace', 'wordcount'
+            ],
+            toolbar: 'undo redo | formatselect | bold italic underline strikethrough | ' +
+                    'forecolor backcolor | alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | removeformat | wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px }',
+            setup: function (editor) {
+                editor.on('change keyup', function () {
+                    editor.save(); // Save content to the original textarea
+                });
+                
+                // Position cursor at the end when editor is ready
+                editor.on('init', function () {
+                    editor.focus();
+                    editor.selection.select(editor.getBody(), true);
+                    editor.selection.collapse(false);
+                });
+            },
+            max_chars: 5000,
+            paste_as_text: true,
+            statusbar: true,
+            wordcount: {
+                countCharacters: true,
+                countCharactersWithoutSpaces: false,
+                countWords: true,
+                showCharacterCount: true,
+                showWordCount: true
+            }
+        });
+
+        function updateStatusLabel() {
+            const select = document.getElementById('statusSelect');
+            const label = document.getElementById('statusLabel');
+            const selectedValue = select.value;
+            
+            // Remove existing classes
+            label.classList.remove('text-danger', 'text-warning', 'text-success');
+            
+            // Add appropriate class and text based on selection
+            if (selectedValue == '@((int)FirstProject.Models.ContactStatus.Open)') {
+                label.classList.add('text-danger');
+                label.textContent = 'Open';
+            } else if (selectedValue == '@((int)FirstProject.Models.ContactStatus.Pending)') {
+                label.classList.add('text-warning');
+                label.textContent = 'Pending';
+            } else if (selectedValue == '@((int)FirstProject.Models.ContactStatus.Closed)') {
+                label.classList.add('text-success');
+                label.textContent = 'Closed';
+            }
+        }
+        
+        // Set initial state based on current model value
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatusLabel();
+        });
+    </script>
+}

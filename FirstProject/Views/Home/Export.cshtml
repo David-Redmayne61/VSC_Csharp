@@ -1,0 +1,190 @@
+@{
+    ViewData["Title"] = "Export Data";
+}
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-4 text-primary">
+                    <i class="bi bi-download"></i> Export Data
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Export Data</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Export Information:</strong> You have <strong>@ViewBag.TotalRecords</strong> records available for export.
+                You can export all data or use search filters to export specific results.
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="row">
+        <!-- Full Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-database"></i> Full Database Export
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export all @ViewBag.TotalRecords records from the database in your preferred format.</p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("ExportToExcel")" class="btn btn-success btn-lg">
+                            <i class="bi bi-file-earmark-excel"></i> Export to Excel
+                        </a>
+                        <a href="@Url.Action("ExportToPdf")" class="btn btn-danger btn-lg">
+                            <i class="bi bi-file-earmark-pdf"></i> Export to PDF
+                        </a>
+                        <a href="@Url.Action("ExportToCsv")" class="btn btn-info btn-lg">
+                            <i class="bi bi-file-earmark-text"></i> Export to CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtered Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filtered Export
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">First search for specific records, then export only the filtered results.</p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Search")" class="btn btn-warning btn-lg">
+                            <i class="bi bi-search"></i> Go to Search & Export
+                        </a>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Search supports wildcards:</h6>
+                    <ul class="small text-muted">
+                        <li><code>*</code> matches any sequence of characters</li>
+                        <li><code>?</code> matches any single character</li>
+                        <li>Example: <code>J*</code> finds all names starting with J</li>
+                        <li>Example: <code>?ohn</code> finds John, Zohn, etc.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Features -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3 class="h5 mb-3">
+                <i class="bi bi-star"></i> Export Features
+            </h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-excel text-success" style="font-size: 2rem;"></i>
+                    <h6 class="card-title mt-2">Excel Export</h6>
+                    <p class="card-text small">Full formatting, ready for analysis and sharing</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 2rem;"></i>
+                    <h6 class="card-title mt-2">PDF Export</h6>
+                    <p class="card-text small">Professional reports with Chrome-quality rendering</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text text-info" style="font-size: 2rem;"></i>
+                    <h6 class="card-title mt-2">CSV Export</h6>
+                    <p class="card-text small">Universal format for data exchange and import</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Export Form -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge"></i> Quick Filter & Export
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="quickExportForm" method="get">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="forename" class="form-label">Forename</label>
+                                <input type="text" class="form-control" id="forename" name="forename" placeholder="e.g., J* or ?ohn">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="familyName" class="form-label">Family Name</label>
+                                <input type="text" class="form-control" id="familyName" name="familyName" placeholder="e.g., Smith*">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="">All</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="yearOfBirth" class="form-label">Year of Birth</label>
+                                <input type="number" class="form-control" id="yearOfBirth" name="yearOfBirth" min="1900" max="2025" placeholder="e.g., 1990">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="quickExport('ExportToExcel')">
+                                            <i class="bi bi-file-earmark-excel"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="quickExport('ExportToPdf')">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickExport(action) {
+    const form = document.getElementById('quickExportForm');
+    form.action = '@Url.Action("")' + action;
+    form.submit();
+}
+</script>

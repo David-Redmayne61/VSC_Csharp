@@ -1,0 +1,267 @@
+@model FirstProject.Models.ViewModels.ReportGeneratorViewModel
+
+@{
+    ViewData["Title"] = "Report Generator";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Reports</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-graph-up text-primary me-2"></i>
+                        Report Generator
+                    </h2>
+                    <p class="text-muted mb-0">Generate comprehensive reports for customer call data</p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>
+                        Generated: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                    </small>
+                </div>
+            </div>
+
+            <!-- Summary Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <i class="bi bi-telephone display-4 text-primary mb-2"></i>
+                            <h4 class="card-title">@Model.TotalCalls</h4>
+                            <p class="card-text text-muted">Total Calls</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-danger">
+                        <div class="card-body text-center">
+                            <i class="bi bi-exclamation-circle display-4 text-danger mb-2"></i>
+                            <h4 class="card-title">@Model.OpenCalls</h4>
+                            <p class="card-text text-muted">Open Calls</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock display-4 text-warning mb-2"></i>
+                            <h4 class="card-title">@Model.PendingCalls</h4>
+                            <p class="card-text text-muted">Pending Calls</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-check-circle display-4 text-success mb-2"></i>
+                            <h4 class="card-title">@Model.ClosedCalls</h4>
+                            <p class="card-text text-muted">Closed Calls</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Generator Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>
+                        Filter & Generate Report
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Generate" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row">
+                            <!-- Date Range -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-calendar-range me-2"></i>
+                                    Date Range
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="StartDate" class="form-label">Start Date</label>
+                                            <input asp-for="StartDate" class="form-control" type="date" />
+                                            <span asp-validation-for="StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="EndDate" class="form-label">End Date</label>
+                                            <input asp-for="EndDate" class="form-control" type="date" />
+                                            <span asp-validation-for="EndDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filters -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-sliders me-2"></i>
+                                    Additional Filters
+                                </h6>
+                                <div class="mb-3">
+                                    <label asp-for="SelectedStatus" class="form-label">Status Filter</label>
+                                    <select asp-for="SelectedStatus" class="form-select">
+                                        <option value="">All Statuses</option>
+                                        <option value="@((int)FirstProject.Models.ContactStatus.Open)">Open</option>
+                                        <option value="@((int)FirstProject.Models.ContactStatus.Pending)">Pending</option>
+                                        <option value="@((int)FirstProject.Models.ContactStatus.Closed)">Closed</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="CreatedBy" class="form-label">Created By (contains)</label>
+                                    <input asp-for="CreatedBy" class="form-control" placeholder="Enter username or partial name" />
+                                    <div class="form-text">Filter by who created the call record</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div>
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-table me-2"></i>
+                                    Generate Report
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="exportReport('csv')">
+                                    <i class="bi bi-download me-2"></i>
+                                    Export to CSV
+                                </button>
+                            </div>
+                            <div>
+                                <button type="reset" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>
+                                    Reset Filters
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Report Links -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-lightning me-2"></i>
+                                Quick Reports
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <a asp-action="Generate" asp-route-startDate="@DateTime.Now.ToString("yyyy-MM-dd")" asp-route-endDate="@DateTime.Now.ToString("yyyy-MM-dd")" class="btn btn-outline-primary w-100 mb-2">
+                                        <i class="bi bi-calendar-day me-2"></i>
+                                        Today's Calls
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a asp-action="Generate" asp-route-startDate="@DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd")" asp-route-endDate="@DateTime.Now.ToString("yyyy-MM-dd")" class="btn btn-outline-primary w-100 mb-2">
+                                        <i class="bi bi-calendar-week me-2"></i>
+                                        This Week
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a asp-action="Generate" asp-route-startDate="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")" asp-route-endDate="@DateTime.Now.ToString("yyyy-MM-dd")" class="btn btn-outline-primary w-100 mb-2">
+                                        <i class="bi bi-calendar-month me-2"></i>
+                                        This Month
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a asp-action="Generate" asp-route-selectedStatus="0" class="btn btn-outline-danger w-100 mb-2">
+                                        <i class="bi bi-exclamation-circle me-2"></i>
+                                        Open Calls Only
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        function exportReport(format) {
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            const params = new URLSearchParams();
+            
+            // Add form data to URL parameters
+            for (let [key, value] of formData.entries()) {
+                if (value) {
+                    params.append(key, value);
+                }
+            }
+            params.append('format', format);
+            
+            // Create download link
+            const url = '@Url.Action("Export", "Reports")?' + params.toString();
+            window.location.href = url;
+        }
+        
+        function quickReport(type) {
+            const today = new Date();
+            let startDate, endDate, status = '';
+            
+            switch(type) {
+                case 'today':
+                    startDate = endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'week':
+                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    startDate = weekAgo.toISOString().split('T')[0];
+                    endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'month':
+                    const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                    startDate = monthAgo.toISOString().split('T')[0];
+                    endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'open':
+                    startDate = endDate = '';
+                    status = '@((int)FirstProject.Models.ContactStatus.Open)';
+                    break;
+            }
+            
+            // Set form values
+            if (startDate) document.querySelector('[name="StartDate"]').value = startDate;
+            if (endDate) document.querySelector('[name="EndDate"]').value = endDate;
+            if (status) document.querySelector('[name="SelectedStatus"]').value = status;
+            
+            // Submit form
+            document.querySelector('form').submit();
+        }
+        
+        // Reset form functionality
+        document.querySelector('button[type="reset"]').addEventListener('click', function() {
+            document.querySelector('form').reset();
+            // Set default dates (last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            document.querySelector('[name="StartDate"]').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.querySelector('[name="EndDate"]').value = today.toISOString().split('T')[0];
+        });
+    </script>
+}
