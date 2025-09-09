@@ -1,0 +1,500 @@
+@model FirstProject.Models.ViewModels.ReportDataViewModel
+
+@{
+    ViewData["Title"] = "Report Results";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Reports" asp-action="Index">Reports</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Report Results</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                        Report Results
+                    </h2>
+                    <p class="text-muted mb-0">Generated on @Model.GeneratedDate.ToString("dddd, MMMM dd, yyyy 'at' HH:mm")</p>
+                </div>
+                <div class="text-end">
+                    <a asp-action="Index" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Back to Generator
+                    </a>
+                    <button type="button" class="btn btn-info me-2" onclick="printReport()">
+                        <i class="bi bi-printer me-2"></i>
+                        Print Report
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="exportCurrentResults()">
+                        <i class="bi bi-download me-2"></i>
+                        Export Results
+                    </button>
+                </div>
+            </div>
+
+            <!-- Applied Filters Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>
+                        Applied Filters
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Date Range:</strong><br>
+                            @if (Model.Filters.StartDate.HasValue || Model.Filters.EndDate.HasValue)
+                            {
+                                <span class="text-muted">
+                                    @(Model.Filters.StartDate?.ToString("dd/MM/yyyy") ?? "Any") - 
+                                    @(Model.Filters.EndDate?.ToString("dd/MM/yyyy") ?? "Any")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">All dates</span>
+                            }
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Status:</strong><br>
+                            <span class="text-muted">
+                                @(Model.Filters.SelectedStatus?.ToString() ?? "All statuses")
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Created By:</strong><br>
+                            <span class="text-muted">
+                                @(string.IsNullOrEmpty(Model.Filters.CreatedBy) ? "Anyone" : Model.Filters.CreatedBy)
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Total Records:</strong><br>
+                            <span class="text-primary fw-bold">@Model.TotalRecords</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card border-primary text-center">
+                        <div class="card-body py-3">
+                            <h5 class="text-primary mb-1">@Model.TotalRecords</h5>
+                            <small class="text-muted">Total Results</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-danger text-center">
+                        <div class="card-body py-3">
+                            <h5 class="text-danger mb-1">@Model.OpenCallsInResults</h5>
+                            <small class="text-muted">Open</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-warning text-center">
+                        <div class="card-body py-3">
+                            <h5 class="text-warning mb-1">@Model.PendingCallsInResults</h5>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-success text-center">
+                        <div class="card-body py-3">
+                            <h5 class="text-success mb-1">@Model.ClosedCallsInResults</h5>
+                            <small class="text-muted">Closed</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body py-3">
+                            <h6 class="card-title mb-2">Date Range in Results</h6>
+                            @if (Model.EarliestCall.HasValue && Model.LatestCall.HasValue)
+                            {
+                                <small class="text-muted">
+                                    @Model.EarliestCall?.ToString("dd/MM/yyyy") - @Model.LatestCall?.ToString("dd/MM/yyyy")
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">No data available</small>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.CustomerContacts.Any())
+            {
+                <!-- Results Table -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-table me-2"></i>
+                            Customer Call Records
+                        </h6>
+                        <small class="text-muted">@Model.TotalRecords record(s) found</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Call Number</th>
+                                        <th>Customer</th>
+                                        <th>Contact Date</th>
+                                        <th>Status</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Created By</th>
+                                        <th>Last Modified</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CustomerContacts)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="Contact" asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none">
+                                                    <strong class="text-primary">@item.CallNumber</strong>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-person-circle me-1"></i>
+                                                @item.Person?.FamilyName, @item.Person?.Forename
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-calendar me-1"></i>
+                                                @item.ContactDate.ToString("dd/MM/yyyy HH:mm")
+                                            </td>
+                                            <td>
+                                                @if (item.Status == FirstProject.Models.ContactStatus.Open)
+                                                {
+                                                    <span class="badge bg-danger">Open</span>
+                                                }
+                                                else if (item.Status == FirstProject.Models.ContactStatus.Pending)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">Closed</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-envelope me-1"></i>
+                                                <a href="mailto:@item.CustomerEmail" class="text-decoration-none">@item.CustomerEmail</a>
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-telephone me-1"></i>
+                                                <a href="tel:@item.CustomerPhone" class="text-decoration-none">@item.CustomerPhone</a>
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-person-badge me-1"></i>
+                                                @(item.CreatedBy ?? "Unknown")
+                                            </td>
+                                            <td>
+                                                @if (item.LastModified.HasValue)
+                                                {
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        @item.LastModified.Value.ToString("dd/MM/yy HH:mm")
+                                                        <br>
+                                                        <span class="fw-bold">@(item.ModifiedBy ?? "Unknown")</span>
+                                                    </small>
+                                                }
+                                                else
+                                                {
+                                                    <small class="text-muted">-</small>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group" role="group">
+                                                    <a asp-controller="Contact" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a asp-controller="Contact" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Contributors -->
+                @if (Model.TopContributors.Any())
+                {
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-people me-2"></i>
+                                Top Contributors in Results
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach (var contributor in Model.TopContributors)
+                                {
+                                    <div class="col-md-2">
+                                        <div class="text-center p-2 border rounded">
+                                            <i class="bi bi-person-check text-primary mb-1"></i><br>
+                                            <small class="fw-bold">@contributor</small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- No Results -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-search display-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">No Records Found</h4>
+                        <p class="text-muted">No customer call records match your selected filters. Try adjusting your search criteria.</p>
+                        <a asp-action="Index" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Modify Filters
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function exportCurrentResults() {
+            const params = new URLSearchParams();
+            
+            // Add current filter parameters
+            @if (Model.Filters.StartDate.HasValue)
+            {
+                <text>params.append('startDate', '@Model.Filters.StartDate.Value.ToString("yyyy-MM-dd")');</text>
+            }
+            @if (Model.Filters.EndDate.HasValue)
+            {
+                <text>params.append('endDate', '@Model.Filters.EndDate.Value.ToString("yyyy-MM-dd")');</text>
+            }
+            @if (Model.Filters.SelectedStatus.HasValue)
+            {
+                <text>params.append('status', '@((int)Model.Filters.SelectedStatus.Value)');</text>
+            }
+            @if (!string.IsNullOrEmpty(Model.Filters.CreatedBy))
+            {
+                <text>params.append('createdBy', '@Model.Filters.CreatedBy');</text>
+            }
+            
+            params.append('format', 'csv');
+            
+            // Create download link
+            const url = '@Url.Action("Export", "Reports")?' + params.toString();
+            window.location.href = url;
+        }
+        
+        function printReport() {
+            window.print();
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        /* Print-specific styles */
+        @@media print {
+            /* Hide non-essential elements */
+            .breadcrumb, 
+            .btn, 
+            .btn-group,
+            nav,
+            .no-print {
+                display: none !important;
+            }
+            
+            /* Optimize layout for print */
+            .container-fluid {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .card {
+                border: 1px solid #dee2e6 !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+                margin-bottom: 20px !important;
+            }
+            
+            .card-header {
+                background-color: #f8f9fa !important;
+                border-bottom: 1px solid #dee2e6 !important;
+                padding: 10px 15px !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            .card-body {
+                padding: 15px !important;
+            }
+            
+            /* Table styles for print */
+            .table {
+                font-size: 12px !important;
+                margin-bottom: 0 !important;
+            }
+            
+            .table th,
+            .table td {
+                padding: 8px 6px !important;
+                border: 1px solid #dee2e6 !important;
+            }
+            
+            .table thead th {
+                background-color: #343a40 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            /* Badge styles for print */
+            .badge {
+                border: 1px solid #000 !important;
+                padding: 2px 6px !important;
+                font-weight: bold !important;
+            }
+            
+            .badge.bg-danger {
+                background-color: #dc3545 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            .badge.bg-warning {
+                background-color: #ffc107 !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            .badge.bg-success {
+                background-color: #198754 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            /* Statistics cards for print */
+            .row .col-md-2 .card {
+                border: 1px solid #000 !important;
+                text-align: center !important;
+                margin-bottom: 10px !important;
+                page-break-inside: avoid;
+            }
+            
+            /* Header styling for print */
+            h2, h5, h6 {
+                color: #000 !important;
+                page-break-after: avoid;
+            }
+            
+            /* Links for print */
+            a {
+                color: #000 !important;
+                text-decoration: underline !important;
+            }
+            
+            /* Force page breaks */
+            .print-page-break {
+                page-break-before: always;
+            }
+            
+            /* Print header */
+            @@page {
+                margin: 1in;
+                @@top-center {
+                    content: "Customer Call Report - Generated: " attr(data-print-date);
+                }
+                @@bottom-right {
+                    content: "Page " counter(page) " of " counter(pages);
+                }
+            }
+            
+            /* Hide overflow for print */
+            .table-responsive {
+                overflow: visible !important;
+            }
+            
+            /* Adjust font sizes */
+            .display-1 {
+                font-size: 2rem !important;
+            }
+            
+            /* Icons - replace with text for better print compatibility */
+            .bi::before {
+                content: none !important;
+            }
+            
+            .bi-telephone::after {
+                content: "📞" !important;
+            }
+            
+            .bi-person-circle::after {
+                content: "👤" !important;
+            }
+            
+            .bi-calendar::after {
+                content: "📅" !important;
+            }
+            
+            .bi-envelope::after {
+                content: "✉" !important;
+            }
+            
+            .bi-clock::after {
+                content: "🕐" !important;
+            }
+            
+            .bi-person-badge::after {
+                content: "👤" !important;
+            }
+        }
+        
+        /* Print preparation class */
+        .print-ready {
+            background: white !important;
+        }
+    </style>
+}
+
+<!-- Hidden form data for export -->
+<div style="display: none;">
+    <input id="filterStartDate" value="@(Model.Filters.StartDate?.ToString("yyyy-MM-dd"))" />
+    <input id="filterEndDate" value="@(Model.Filters.EndDate?.ToString("yyyy-MM-dd"))" />
+    <input id="filterStatus" value="@(Model.Filters.SelectedStatus?.ToString())" />
+    <input id="filterCreatedBy" value="@Model.Filters.CreatedBy" />
+</div>

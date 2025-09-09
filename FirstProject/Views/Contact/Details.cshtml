@@ -1,0 +1,210 @@
+@model FirstProject.Models.CustomerContact
+
+@{
+    ViewData["Title"] = "Customer Call Details";
+}
+
+@section Styles {
+    <style>
+        .formatted-content {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .formatted-content p {
+            margin-bottom: 0.75rem;
+        }
+        
+        .formatted-content ul, .formatted-content ol {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+        }
+        
+        .formatted-content strong {
+            font-weight: 600;
+        }
+        
+        .formatted-content em {
+            font-style: italic;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Contact" asp-action="Index">Customer Calls</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.CallNumber</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header Section -->
+            <div class="text-center mb-4">
+                <h2 class="mb-1">
+                    <i class="bi bi-telephone-fill text-primary me-2"></i>
+                    Customer Call Details
+                </h2>
+                <p class="text-muted">Call Number: <strong>@Model.CallNumber</strong></p>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Contact Information -->
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Contact Information
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Call Number:</label>
+                                <div class="p-2 bg-light rounded">
+                                    <i class="bi bi-hash me-1"></i>
+                                    @Model.CallNumber
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contact Date:</label>
+                                <div class="p-2 bg-light rounded">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    @Model.ContactDate.ToString("dddd, MMMM dd, yyyy 'at' HH:mm")
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Created By:</label>
+                                <div class="p-2 bg-light rounded">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    @(Model.CreatedBy ?? "Unknown")
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Status:</label>
+                                <div class="p-2 bg-light rounded">
+                                    @Model.Status
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Information -->
+                        <div class="col-md-6">
+                            <h5 class="text-success mb-3">
+                                <i class="bi bi-person-circle me-2"></i>
+                                Customer Information
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Customer Name:</label>
+                                <div class="p-2 bg-light rounded">
+                                    <i class="bi bi-person me-1"></i>
+                                    @Model.Person?.FamilyName, @Model.Person?.Forename
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Email:</label>
+                                <div class="p-2 bg-light rounded">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    <a href="mailto:@Model.CustomerEmail" class="text-decoration-none">@Model.CustomerEmail</a>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Phone:</label>
+                                <div class="p-2 bg-light rounded">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    <a href="tel:@Model.CustomerPhone" class="text-decoration-none">@Model.CustomerPhone</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reason for Contact -->
+                    <div class="mt-4">
+                        <h5 class="text-warning mb-3">
+                            <i class="bi bi-chat-text me-2"></i>
+                            Reason for Contact
+                        </h5>
+                        <div class="p-3 bg-light rounded border-start border-warning border-4">
+                            <div class="formatted-content">
+                                @Html.Raw(Model.ReasonForContact)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Information -->
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Record History
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>Created by:</strong> @(Model.CreatedBy ?? "Unknown")<br>
+                                </small>
+                            </div>
+                            @if (Model.LastModified.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Last modified:</strong> @Model.LastModified.Value.ToString("MMM dd, yyyy 'at' HH:mm")<br>
+                                        <strong>Modified by:</strong> @(Model.ModifiedBy ?? "Unknown")
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Customer Calls
+                        </a>
+                        <div>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">
+                                <i class="bi bi-pencil me-2"></i>
+                                Edit Customer Call
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>
+                                Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Quick Actions</h6>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="mailto:@Model.CustomerEmail" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-envelope me-1"></i>
+                            Send Email
+                        </a>
+                        <a href="tel:@Model.CustomerPhone" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-telephone me-1"></i>
+                            Call Customer
+                        </a>
+                        <a asp-controller="Contact" asp-action="Create" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            New Contact
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

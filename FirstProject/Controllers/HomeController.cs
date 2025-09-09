@@ -28,28 +28,54 @@ namespace FirstProject.Controllers
             _pdfService = pdfService;
         }
 
-        // Keep only one Index action method
-        public async Task<IActionResult> Index(string forename, string familyName, string gender, int? yearOfBirth)
+        // Dashboard - Main landing page for logged-in users
+        public async Task<IActionResult> Index()
         {
-            var query = _context.People.AsQueryable();
+            // Get some basic statistics for the dashboard
+            var totalPeople = await _context.People.CountAsync();
+            var totalUsers = await _context.Users.CountAsync();
+            var totalContacts = await _context.CustomerContacts.CountAsync();
+            var todaysContacts = await _context.CustomerContacts
+                .Where(c => c.ContactDate.Date == DateTime.Today)
+                .CountAsync();
+            var openContacts = await _context.CustomerContacts
+                .Where(c => c.Status == ContactStatus.Open)
+                .CountAsync();
+            var pendingContacts = await _context.CustomerContacts
+                .Where(c => c.Status == ContactStatus.Pending)
+                .CountAsync();
+            var closedContacts = await _context.CustomerContacts
+                .Where(c => c.Status == ContactStatus.Closed)
+                .CountAsync();
+            var recentlyAdded = await _context.People
+                .OrderByDescending(p => p.Id)
+                .Take(5)
+                .ToListAsync();
 
-            if (!string.IsNullOrWhiteSpace(forename))
-                query = query.Where(p => p.Forename.Contains(forename));
+            ViewBag.TotalPeople = totalPeople;
+            ViewBag.TotalUsers = totalUsers;
+            ViewBag.TotalContacts = totalContacts;
+            ViewBag.TodaysContacts = todaysContacts;
+            ViewBag.OpenContacts = openContacts;
+            ViewBag.PendingContacts = pendingContacts;
+            ViewBag.ClosedContacts = closedContacts;
+            ViewBag.RecentlyAdded = recentlyAdded;
 
-            if (!string.IsNullOrWhiteSpace(familyName))
-                query = query.Where(p => p.FamilyName.Contains(familyName));
+            return View();
+        }
 
-            if (!string.IsNullOrWhiteSpace(gender))
-                query = query.Where(p => p.Gender == gender);
+        // Add Person form
+        public IActionResult AddPerson()
+        {
+            return View();
+        }
 
-            if (yearOfBirth.HasValue)
-                query = query.Where(p => p.YearOfBirth == yearOfBirth.Value);
-
-            // Add default sorting
-            query = query.OrderBy(p => p.FamilyName);
-
-            var people = await query.ToListAsync();
-            return View(people);
+        // Export Data page
+        public async Task<IActionResult> Export()
+        {
+            var totalRecords = await _context.People.CountAsync();
+            ViewBag.TotalRecords = totalRecords;
+            return View();
         }
 
         public IActionResult Privacy()
@@ -64,7 +90,7 @@ namespace FirstProject.Controllers
                 string.IsNullOrWhiteSpace(Gender) || YearOfBirth < 1900 || YearOfBirth > 2025)
             {
                 ViewBag.ErrorMessage = "Please fill all fields correctly!";
-                return View("Index");
+                return View("AddPerson");
             }
 
             // Check for duplicates
@@ -75,7 +101,7 @@ namespace FirstProject.Controllers
             if (duplicate)
             {
                 ViewBag.DuplicateMessage = $"A person with the name {Forename} {FamilyName} already exists.";
-                return View("Index");
+                return View("AddPerson");
             }
 
             var person = new Person
@@ -89,8 +115,8 @@ namespace FirstProject.Controllers
             _context.People.Add(person);
             await _context.SaveChangesAsync();
 
-            ViewBag.SuccessMessage = "Record added successfully!";
-            return View("Index");
+            TempData["SuccessMessage"] = $"Record for {Forename} {FamilyName} added successfully!";
+            return RedirectToAction("Index"); // Redirect to dashboard
         }
 
         public async Task<IActionResult> ViewPeople(string sortOrder)

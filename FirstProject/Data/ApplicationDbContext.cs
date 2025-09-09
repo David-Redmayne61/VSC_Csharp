@@ -12,6 +12,7 @@ namespace FirstProject.Data
 
         public DbSet<Person> People { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<CustomerContact> CustomerContacts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
