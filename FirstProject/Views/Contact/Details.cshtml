@@ -172,10 +172,20 @@
                             Back to Customer Calls
                         </a>
                         <div>
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">
-                                <i class="bi bi-pencil me-2"></i>
-                                Edit Customer Call
-                            </a>
+                            @if (Model.Status == ContactStatus.Closed)
+                            {
+                                <a onclick="return confirmEditClosed('@Url.Action("Edit", new { id = Model.Id })')" class="btn btn-warning me-2">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    Edit Customer Call
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    Edit Customer Call
+                                </a>
+                            }
                             <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
                                 <i class="bi bi-trash me-2"></i>
                                 Delete
@@ -208,3 +218,13 @@
         </div>
     </div>
 </div>
+
+<script>
+function confirmEditClosed(editUrl) {
+    if (confirm("This call is marked as CLOSED. Are you sure you want to edit it?")) {
+        window.location.href = editUrl;
+        return true;
+    }
+    return false;
+}
+</script>

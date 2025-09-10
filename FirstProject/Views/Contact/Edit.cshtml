@@ -118,7 +118,8 @@
                                 @Html.DisplayNameFor(model => model.ReasonForContact)
                                 <span class="text-danger">*</span>
                             </label>
-                            <textarea asp-for="ReasonForContact" id="reasonEditor" class="form-control" rows="8"></textarea>
+                            <textarea asp-for="ReasonForContact" id="reasonEditor" class="form-control" rows="8" 
+                                      spellcheck="true" lang="en-GB"></textarea>
                             <div class="form-text">
                                 Use the formatting tools above to style your text. Maximum 5000 characters.
                             </div>
@@ -168,16 +169,59 @@
                     'forecolor backcolor | alignleft aligncenter alignright alignjustify | ' +
                     'bullist numlist outdent indent | removeformat | wordcount',
             content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px }',
+            // Force browser spell checking
+            browser_spellcheck: true,
+            gecko_spellcheck: true,
+            // Disable TinyMCE's context menu to allow browser's spell check menu
+            contextmenu: false,
             setup: function (editor) {
                 editor.on('change keyup', function () {
                     editor.save(); // Save content to the original textarea
                 });
                 
+                // Force spell check attributes when editor initializes
+                editor.on('init', function() {
+                    var body = editor.getBody();
+                    var iframe = editor.getContainer().querySelector('iframe');
+                    
+                    // Set attributes on both the iframe content and body
+                    body.setAttribute('spellcheck', 'true');
+                    body.setAttribute('lang', 'en-GB');
+                    body.setAttribute('data-gramm', 'false'); // Disable Grammarly if present
+                    
+                    if (iframe && iframe.contentDocument) {
+                        iframe.contentDocument.documentElement.setAttribute('lang', 'en-GB');
+                    }
+                    
+                    // Allow browser context menu events to bubble up
+                    body.addEventListener('contextmenu', function(e) {
+                        e.stopPropagation();
+                        // Let the browser handle the context menu
+                        return true;
+                    });
+                    
+                    // Force a refresh of spell checking
+                    setTimeout(function() {
+                        body.focus();
+                        body.blur();
+                        body.focus();
+                    }, 100);
+                    
+                    // Set up change tracking for unsaved changes warning
+                    setTimeout(function() {
+                        if (typeof setupTinyMCEChangeTracking === 'function') {
+                            setupTinyMCEChangeTracking(editor);
+                        }
+                    }, 200);
+                });
+                
                 // Position cursor at the end when editor is ready
                 editor.on('init', function () {
-                    editor.focus();
-                    editor.selection.select(editor.getBody(), true);
-                    editor.selection.collapse(false);
+                    setTimeout(function() {
+                        editor.focus();
+                        editor.selection.select(editor.getBody(), true);
+                        editor.selection.collapse(false);
+                    }, 200);
                 });
             },
             max_chars: 5000,
@@ -216,6 +260,197 @@
         // Set initial state based on current model value
         document.addEventListener('DOMContentLoaded', function() {
             updateStatusLabel();
+            initializeUnsavedChangesWarning();
         });
+
+        // Unsaved Changes Warning System
+        let hasUnsavedChanges = false;
+        let initialFormData = {};
+        let formSubmitted = false;
+        let isSubmitting = false; // New flag to track submission process
+
+        function initializeUnsavedChangesWarning() {
+            // Capture initial form state
+            const form = document.querySelector('form[asp-action="Edit"]');
+            if (form) {
+                captureInitialFormState(form);
+                
+                // Monitor form changes
+                form.addEventListener('input', markAsChanged);
+                form.addEventListener('change', markAsChanged);
+                
+                // Monitor form submission with more aggressive clearing
+                form.addEventListener('submit', function(e) {
+                    // Add class to form to indicate submission
+                    form.classList.add('submitting');
+                    
+                    // Set flags immediately and synchronously
+                    isSubmitting = true;
+                    formSubmitted = true;
+                    hasUnsavedChanges = false;
+                    
+                    // Reset visual indicators immediately
+                    resetVisualIndicators();
+                });
+                
+                // Also capture the form submission at the earliest possible moment
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', function(e) {
+                        // Add class to form
+                        form.classList.add('submitting');
+                        
+                        // Clear flags as soon as submit button is clicked
+                        isSubmitting = true;
+                        formSubmitted = true;
+                        hasUnsavedChanges = false;
+                        resetVisualIndicators();
+                    });
+                }
+                
+                // Monitor TinyMCE changes (will be set up when editor is ready)
+                if (typeof tinymce !== 'undefined') {
+                    // Wait for TinyMCE to initialize
+                    const checkTinyMCE = setInterval(function() {
+                        const editor = tinymce.get('reasonEditor');
+                        if (editor) {
+                            clearInterval(checkTinyMCE);
+                            setupTinyMCEChangeTracking(editor);
+                        }
+                    }, 100);
+                }
+            }
+            
+            // Add beforeunload event listener with improved logic
+            window.addEventListener('beforeunload', beforeUnloadHandler);
+            
+            // Monitor navigation links
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (link && hasUnsavedChanges && !formSubmitted && !isSubmitting) {
+                    // Check if it's a navigation link (not the submit button area)
+                    if (link.href && !link.closest('.btn-warning') && !link.closest('.btn-danger')) {
+                        const confirmLeave = confirm('You have unsaved changes. Are you sure you want to leave without saving?\n\nClick OK to leave without saving, or Cancel to return and save your changes.');
+                        if (!confirmLeave) {
+                            e.preventDefault();
+                            return false;
+                        } else {
+                            // User confirmed they want to leave, clear the warning
+                            hasUnsavedChanges = false;
+                            formSubmitted = true;
+                            isSubmitting = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        // Improved beforeunload handler with multiple checks
+        function beforeUnloadHandler(e) {
+            // Multiple conditions to ensure we don't show warning during submission
+            if (hasUnsavedChanges && !formSubmitted && !isSubmitting) {
+                // Double-check that we're not in a submission process
+                const form = document.querySelector('form[asp-action="Edit"]');
+                if (form && !form.classList.contains('submitting')) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved changes. Are you sure you want to leave without saving?';
+                    return e.returnValue;
+                }
+            }
+            // If any of the flags indicate submission, allow navigation without warning
+            return undefined;
+        }
+
+        function captureInitialFormState(form) {
+            const formData = new FormData(form);
+            for (let [key, value] of formData.entries()) {
+                initialFormData[key] = value;
+            }
+            
+            // Store initial TinyMCE content separately (will be updated when editor is ready)
+            const reasonTextarea = document.getElementById('reasonEditor');
+            if (reasonTextarea) {
+                initialFormData['reasonEditor'] = reasonTextarea.value;
+            }
+        }
+
+        function setupTinyMCEChangeTracking(editor) {
+            // Capture initial TinyMCE content after a short delay to ensure it's fully loaded
+            setTimeout(function() {
+                initialFormData['reasonEditor'] = editor.getContent();
+                
+                // Monitor TinyMCE changes with debouncing to avoid excessive triggers
+                let changeTimeout;
+                editor.on('change keyup setcontent', function() {
+                    clearTimeout(changeTimeout);
+                    changeTimeout = setTimeout(function() {
+                        const currentContent = editor.getContent();
+                        if (currentContent !== initialFormData['reasonEditor'] && !formSubmitted) {
+                            markAsChanged();
+                        }
+                    }, 500); // 500ms debounce
+                });
+            }, 300);
+        }
+
+        function markAsChanged() {
+            // Don't mark as changed if we're already submitting
+            if (!hasUnsavedChanges && !isSubmitting && !formSubmitted) {
+                hasUnsavedChanges = true;
+                
+                // Add visual indicator to the page title
+                if (!document.title.includes('*')) {
+                    document.title = '* ' + document.title;
+                }
+                
+                // Add visual indicator to the submit button
+                const submitBtn = document.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.classList.contains('btn-danger')) {
+                    submitBtn.classList.remove('btn-warning');
+                    submitBtn.classList.add('btn-danger');
+                    submitBtn.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Save Changes Required';
+                }
+            }
+        }
+
+        function resetVisualIndicators() {
+            // Reset page title
+            if (document.title.includes('*')) {
+                document.title = document.title.replace('* ', '');
+            }
+            
+            // Reset submit button
+            const submitBtn = document.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.classList.remove('btn-danger');
+                submitBtn.classList.add('btn-warning');
+                submitBtn.innerHTML = '<i class="bi bi-save me-2"></i>Update Customer Call';
+            }
+        }
+
+        function checkForChanges() {
+            const form = document.querySelector('form[asp-action="Edit"]');
+            if (!form) return false;
+            
+            const currentFormData = new FormData(form);
+            
+            // Check regular form fields
+            for (let [key, value] of currentFormData.entries()) {
+                if (initialFormData[key] !== value) {
+                    return true;
+                }
+            }
+            
+            // Check TinyMCE content
+            const editor = tinymce.get('reasonEditor');
+            if (editor) {
+                const currentContent = editor.getContent();
+                if (currentContent !== initialFormData['reasonEditor']) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
     </script>
 }

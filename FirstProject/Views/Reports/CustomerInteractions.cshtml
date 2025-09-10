@@ -1,0 +1,64 @@
+@model IEnumerable<FirstProject.Models.Person>
+
+@{
+    ViewData["Title"] = "Customer Interaction Reports";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> Customer Interaction Reports</h2>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Reports
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-search"></i> Select Customer to View Interaction History</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>@Html.DisplayNameFor(model => model.Forename)</th>
+                                        <th>@Html.DisplayNameFor(model => model.FamilyName)</th>
+                                        <th>@Html.DisplayNameFor(model => model.YearOfBirth)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var person in Model)
+                                    {
+                                        <tr>
+                                            <td>@Html.DisplayFor(modelItem => person.Forename)</td>
+                                            <td>@Html.DisplayFor(modelItem => person.FamilyName)</td>
+                                            <td>@Html.DisplayFor(modelItem => person.YearOfBirth)</td>
+                                            <td>
+                                                <a asp-action="CustomerInteractionDetails" 
+                                                   asp-route-personId="@person.Id" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-chart-line"></i> View Interactions
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No customers with call records found.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -25,7 +25,11 @@
                     <p class="text-muted mb-0">Generate comprehensive reports for customer call data</p>
                 </div>
                 <div class="text-end">
-                    <small class="text-muted">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-house-door me-2"></i>
+                        Back to Dashboard
+                    </a>
+                    <small class="text-muted d-block mt-2">
                         <i class="bi bi-clock me-1"></i>
                         Generated: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
                     </small>
@@ -166,28 +170,34 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <a asp-action="Generate" asp-route-startDate="@DateTime.Now.ToString("yyyy-MM-dd")" asp-route-endDate="@DateTime.Now.ToString("yyyy-MM-dd")" class="btn btn-outline-primary w-100 mb-2">
                                         <i class="bi bi-calendar-day me-2"></i>
                                         Today's Calls
                                     </a>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <a asp-action="Generate" asp-route-startDate="@DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd")" asp-route-endDate="@DateTime.Now.ToString("yyyy-MM-dd")" class="btn btn-outline-primary w-100 mb-2">
                                         <i class="bi bi-calendar-week me-2"></i>
                                         This Week
                                     </a>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <a asp-action="Generate" asp-route-startDate="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")" asp-route-endDate="@DateTime.Now.ToString("yyyy-MM-dd")" class="btn btn-outline-primary w-100 mb-2">
                                         <i class="bi bi-calendar-month me-2"></i>
                                         This Month
                                     </a>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <a asp-action="Generate" asp-route-selectedStatus="0" class="btn btn-outline-danger w-100 mb-2">
                                         <i class="bi bi-exclamation-circle me-2"></i>
                                         Open Calls Only
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <a asp-action="CustomerInteractions" class="btn btn-outline-success w-100 mb-2">
+                                        <i class="bi bi-person-lines-fill me-2"></i>
+                                        Customer Interaction History
                                     </a>
                                 </div>
                             </div>

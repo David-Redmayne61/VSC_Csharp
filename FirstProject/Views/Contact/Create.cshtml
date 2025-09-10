@@ -123,6 +123,7 @@
                                 <span class="text-danger">*</span>
                             </label>
                             <textarea asp-for="ReasonForContact" id="reasonEditor" class="form-control" rows="8" 
+                                      spellcheck="true" lang="en-GB"
                                       placeholder="Describe the reason for this contact, what was discussed, actions taken, etc."></textarea>
                             <div class="form-text">
                                 Use the formatting tools above to style your text. Maximum 5000 characters.
@@ -173,9 +174,43 @@
                     'forecolor backcolor | alignleft aligncenter alignright alignjustify | ' +
                     'bullist numlist outdent indent | removeformat | wordcount',
             content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px }',
+            // Force browser spell checking
+            browser_spellcheck: true,
+            gecko_spellcheck: true,
+            // Disable TinyMCE's context menu to allow browser's spell check menu
+            contextmenu: false,
             setup: function (editor) {
                 editor.on('change keyup', function () {
                     editor.save(); // Save content to the original textarea
+                });
+                
+                // Force spell check attributes when editor initializes
+                editor.on('init', function() {
+                    var body = editor.getBody();
+                    var iframe = editor.getContainer().querySelector('iframe');
+                    
+                    // Set attributes on both the iframe content and body
+                    body.setAttribute('spellcheck', 'true');
+                    body.setAttribute('lang', 'en-GB');
+                    body.setAttribute('data-gramm', 'false'); // Disable Grammarly if present
+                    
+                    if (iframe && iframe.contentDocument) {
+                        iframe.contentDocument.documentElement.setAttribute('lang', 'en-GB');
+                    }
+                    
+                    // Allow browser context menu events to bubble up
+                    body.addEventListener('contextmenu', function(e) {
+                        e.stopPropagation();
+                        // Let the browser handle the context menu
+                        return true;
+                    });
+                    
+                    // Force a refresh of spell checking
+                    setTimeout(function() {
+                        body.focus();
+                        body.blur();
+                        body.focus();
+                    }, 100);
                 });
             },
             max_chars: 5000,
