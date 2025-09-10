@@ -40,7 +40,61 @@ namespace FirstProject.Controllers
             return View(viewModel);
         }
 
-        // GET: Reports/Generate - for quick report links
+        // GET: Reports/GeneratePDF
+        public async Task<IActionResult> GeneratePDF(DateTime? startDate, DateTime? endDate, ContactStatus? selectedStatus, string? createdBy)
+        {
+            var model = new ReportGeneratorViewModel
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                SelectedStatus = selectedStatus,
+                CreatedBy = createdBy
+            };
+
+            var reportData = await GetReportData(model);
+            
+            // Return the clean PDF view
+            return View("PDFReport", reportData);
+        }
+
+        // Helper method to get report data
+        private async Task<ReportDataViewModel> GetReportData(ReportGeneratorViewModel model)
+        {
+            var query = _context.CustomerContacts
+                .Include(c => c.Person)
+                .AsQueryable();
+
+            // Apply filters (same logic as existing GenerateReport)
+            if (model.StartDate.HasValue)
+            {
+                query = query.Where(c => c.ContactDate >= model.StartDate.Value);
+            }
+
+            if (model.EndDate.HasValue)
+            {
+                query = query.Where(c => c.ContactDate <= model.EndDate.Value.AddDays(1));
+            }
+
+            if (model.SelectedStatus.HasValue)
+            {
+                query = query.Where(c => c.Status == model.SelectedStatus.Value);
+            }
+
+            if (!string.IsNullOrEmpty(model.CreatedBy))
+            {
+                query = query.Where(c => c.CreatedBy != null && c.CreatedBy.Contains(model.CreatedBy));
+            }
+
+            var results = await query.OrderByDescending(c => c.ContactDate).ToListAsync();
+
+            return new ReportDataViewModel
+            {
+                CustomerContacts = results,
+                Filters = model,
+                GeneratedDate = DateTime.Now,
+                TotalRecords = results.Count
+            };
+        }        // GET: Reports/Generate - for quick report links
         [HttpGet]
         public async Task<IActionResult> Generate(DateTime? startDate, DateTime? endDate, ContactStatus? selectedStatus, string? createdBy)
         {
@@ -167,6 +221,50 @@ namespace FirstProject.Controllers
 
             var fileName = $"CustomerCalls_Report_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
             return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
+        }
+
+        // GET: Reports/CustomerInteractions
+        public async Task<IActionResult> CustomerInteractions()
+        {
+            // Get all people who have customer contact records
+            var customersWithCalls = await _context.People
+                .Where(p => _context.CustomerContacts.Any(c => c.PersonId == p.Id))
+                .OrderBy(p => p.FamilyName)
+                .ThenBy(p => p.Forename)
+                .ToListAsync();
+
+            return View(customersWithCalls);
+        }
+
+        // GET: Reports/CustomerInteractionDetails
+        public async Task<IActionResult> CustomerInteractionDetails(int personId)
+        {
+            var person = await _context.People
+                .FirstOrDefaultAsync(p => p.Id == personId);
+
+            if (person == null)
+            {
+                return NotFound();
+            }
+
+            var customerCalls = await _context.CustomerContacts
+                .Where(c => c.PersonId == personId)
+                .OrderByDescending(c => c.ContactDate)
+                .ToListAsync();
+
+            var viewModel = new CustomerInteractionViewModel
+            {
+                Person = person,
+                CustomerContacts = customerCalls,
+                TotalCalls = customerCalls.Count,
+                OpenCalls = customerCalls.Count(c => c.Status == ContactStatus.Open),
+                PendingCalls = customerCalls.Count(c => c.Status == ContactStatus.Pending),
+                ClosedCalls = customerCalls.Count(c => c.Status == ContactStatus.Closed),
+                FirstContactDate = customerCalls.Any() ? customerCalls.Min(c => c.ContactDate) : (DateTime?)null,
+                LastContactDate = customerCalls.Any() ? customerCalls.Max(c => c.ContactDate) : (DateTime?)null
+            };
+
+            return View(viewModel);
         }
     }
 }

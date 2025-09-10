@@ -34,6 +34,10 @@
                         <i class="bi bi-printer me-2"></i>
                         Print Report
                     </button>
+                    <a href="#" onclick="generatePDF()" class="btn btn-warning me-2">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>
+                        Generate PDF
+                    </a>
                     <button type="button" class="btn btn-success" onclick="exportCurrentResults()">
                         <i class="bi bi-download me-2"></i>
                         Export Results
@@ -318,6 +322,26 @@
         
         function printReport() {
             window.print();
+        }
+        
+        function generatePDF() {
+            // Get current filter parameters
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const status = document.getElementById('filterStatus').value;
+            const createdBy = document.getElementById('filterCreatedBy').value;
+            
+            // Build URL with parameters
+            let url = '@Url.Action("GeneratePDF", "Reports")?';
+            const params = new URLSearchParams();
+            
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (status) params.append('selectedStatus', status);
+            if (createdBy) params.append('createdBy', createdBy);
+            
+            // Open PDF in new window
+            window.open(url + params.toString(), '_blank');
         }
     </script>
 }

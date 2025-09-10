@@ -1,0 +1,331 @@
+@model FirstProject.Models.ViewModels.AuditLogDetailViewModel
+
+@{
+    ViewData["Title"] = "Audit Log Detail";
+}
+
+<div class="container-fluid">
+    <!-- Print Header (only visible when printing) -->
+    <div class="print-header">
+        <h1>Audit Log Report</h1>
+        <p><strong>Generated:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")</p>
+        <p><strong>Log ID:</strong> @Model.AuditLog.Id</p>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-action="AuditLogs">Audit Logs</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Detail</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>
+                <i class="bi bi-shield-check text-primary me-2"></i>
+                Audit Log Detail
+            </h2>
+            <p class="text-muted">Detailed information about the audit log entry</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="AuditLogs" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Audit Logs
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Details -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Audit Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Action:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge @GetActionBadgeClass(Model.AuditLog.Action)">@Model.AuditLog.Action</span>
+                                </dd>
+
+                                <dt class="col-sm-4">Entity Type:</dt>
+                                <dd class="col-sm-8">@Model.AuditLog.EntityType</dd>
+
+                                <dt class="col-sm-4">Entity ID:</dt>
+                                <dd class="col-sm-8">@(Model.AuditLog.EntityId?.ToString() ?? "N/A")</dd>
+
+                                <dt class="col-sm-4">User:</dt>
+                                <dd class="col-sm-8"><strong>@Model.AuditLog.UserName</strong></dd>
+
+                                <dt class="col-sm-4">Timestamp:</dt>
+                                <dd class="col-sm-8">@Model.AuditLog.Timestamp.ToString("yyyy-MM-dd HH:mm:ss UTC")</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">IP Address:</dt>
+                                <dd class="col-sm-8">@Model.AuditLog.IpAddress</dd>
+
+                                <dt class="col-sm-4">User Agent:</dt>
+                                <dd class="col-sm-8">
+                                    <small class="text-muted">@Model.AuditLog.UserAgent</small>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.AuditLog.EntityDescription))
+                    {
+                        <div class="row mt-3">
+                            <div class="col">
+                                <h6>Description:</h6>
+                                <p class="text-muted">@Model.AuditLog.EntityDescription</p>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.AuditLog.Details))
+                    {
+                        <div class="row mt-3">
+                            <div class="col">
+                                <h6>Additional Details:</h6>
+                                <p class="text-muted">@Model.AuditLog.Details</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Value Changes -->
+            @if (!string.IsNullOrEmpty(Model.AuditLog.OldValues) || !string.IsNullOrEmpty(Model.AuditLog.NewValues))
+            {
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-arrow-left-right me-2"></i>
+                            Value Changes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @if (!string.IsNullOrEmpty(Model.AuditLog.OldValues))
+                            {
+                                <div class="col-md-6">
+                                    <h6 class="text-danger">Old Values:</h6>
+                                    @if (Model.OldValuesDict != null)
+                                    {
+                                        <table class="table table-sm table-bordered">
+                                            @foreach (var kvp in Model.OldValuesDict)
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">@kvp.Key</td>
+                                                    <td>@kvp.Value</td>
+                                                </tr>
+                                            }
+                                        </table>
+                                    }
+                                    else
+                                    {
+                                        <pre class="bg-light p-3 rounded"><code>@Model.AuditLog.OldValues</code></pre>
+                                    }
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.AuditLog.NewValues))
+                            {
+                                <div class="col-md-6">
+                                    <h6 class="text-success">New Values:</h6>
+                                    @if (Model.NewValuesDict != null)
+                                    {
+                                        <table class="table table-sm table-bordered">
+                                            @foreach (var kvp in Model.NewValuesDict)
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">@kvp.Key</td>
+                                                    <td>@kvp.Value</td>
+                                                </tr>
+                                            }
+                                        </table>
+                                    }
+                                    else
+                                    {
+                                        <pre class="bg-light p-3 rounded"><code>@Model.AuditLog.NewValues</code></pre>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Related Logs -->
+        <div class="col-lg-4">
+            @if (Model.RelatedLogs.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Related Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            @foreach (var relatedLog in Model.RelatedLogs)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">
+                                                <span class="badge @GetActionBadgeClass(relatedLog.Action) me-2">@relatedLog.Action</span>
+                                                @relatedLog.UserName
+                                            </div>
+                                            <small class="text-muted">@relatedLog.Timestamp.ToString("MMM dd, yyyy HH:mm")</small>
+                                            @if (!string.IsNullOrEmpty(relatedLog.EntityDescription))
+                                            {
+                                                <div class="small text-muted mt-1">
+                                                    @(relatedLog.EntityDescription.Length > 60 ? relatedLog.EntityDescription.Substring(0, 60) + "..." : relatedLog.EntityDescription)
+                                                </div>
+                                            }
+                                        </div>
+                                        <a asp-action="AuditLogDetail" asp-route-id="@relatedLog.Id" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.AuditLog.EntityType == "CustomerContact" && Model.AuditLog.EntityId.HasValue)
+                    {
+                        <a asp-controller="Contact" asp-action="Details" asp-route-id="@Model.AuditLog.EntityId" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                            <i class="bi bi-eye me-2"></i>
+                            View Customer Contact
+                        </a>
+                    }
+                    @if (Model.AuditLog.EntityType == "Person" && Model.AuditLog.EntityId.HasValue)
+                    {
+                        <a asp-controller="People" asp-action="Details" asp-route-id="@Model.AuditLog.EntityId" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                            <i class="bi bi-person me-2"></i>
+                            View Person
+                        </a>
+                    }
+                    
+                    <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="printAuditLog()">
+                        <i class="bi bi-printer me-2"></i>
+                        Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        @@media print {
+            /* Hide navigation and buttons when printing */
+            .breadcrumb, .btn, .navbar, .sidebar, .alert {
+                display: none !important;
+            }
+            
+            /* Optimize layout for printing */
+            .container-fluid {
+                margin: 0;
+                padding: 20px;
+            }
+            
+            .card {
+                border: 1px solid #000;
+                box-shadow: none;
+                margin-bottom: 20px;
+            }
+            
+            .card-header {
+                background-color: #f8f9fa !important;
+                border-bottom: 1px solid #000;
+                font-weight: bold;
+            }
+            
+            /* Ensure good contrast for printing */
+            .badge {
+                background-color: #6c757d !important;
+                color: white !important;
+            }
+            
+            /* Page break control */
+            .audit-section {
+                page-break-inside: avoid;
+            }
+            
+            /* Print header */
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+            
+            /* Hide non-essential elements */
+            .col-md-3 {
+                display: none;
+            }
+            
+            .col-md-9 {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: none !important;
+            }
+        }
+        
+        .print-header {
+            display: none;
+        }
+    </style>
+
+    <script>
+        function printAuditLog() {
+            window.print();
+        }
+    </script>
+}
+
+@functions {
+    private string GetActionBadgeClass(string action)
+    {
+        return action switch
+        {
+            "CREATE" => "bg-success",
+            "UPDATE" => "bg-warning text-dark",
+            "DELETE" => "bg-danger",
+            "VIEW" => "bg-info",
+            "LOGIN" => "bg-primary",
+            "LOGOUT" => "bg-secondary",
+            "FAILED_LOGIN" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

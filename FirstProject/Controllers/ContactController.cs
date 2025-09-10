@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using FirstProject.Data;
 using FirstProject.Models;
 using FirstProject.Models.ViewModels;
+using FirstProject.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace FirstProject.Controllers
@@ -12,10 +13,12 @@ namespace FirstProject.Controllers
     public class ContactController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IAuditService _auditService;
 
-        public ContactController(ApplicationDbContext context)
+        public ContactController(ApplicationDbContext context, IAuditService auditService)
         {
             _context = context;
+            _auditService = auditService;
         }
 
         // GET: Contact
@@ -75,6 +78,31 @@ namespace FirstProject.Controllers
 
                 _context.CustomerContacts.Add(contact);
                 await _context.SaveChangesAsync();
+
+                // Log the creation action
+                var newValues = new
+                {
+                    contact.Id,
+                    contact.CallNumber,
+                    contact.PersonId,
+                    contact.CustomerEmail,
+                    contact.CustomerPhone,
+                    contact.ContactDate,
+                    contact.Status,
+                    contact.ReasonForContact
+                };
+
+                await _auditService.LogAsync(
+                    AuditActions.Create,
+                    EntityTypes.CustomerContact,
+                    contact.Id,
+                    $"Customer Call #{contact.CallNumber}",
+                    GetCurrentUsername(),
+                    HttpContext,
+                    null,
+                    newValues.ToAuditString(),
+                    "New customer contact created via web interface"
+                );
 
                 TempData["SuccessMessage"] = "Customer contact recorded successfully!";
                 return RedirectToAction(nameof(Index));
@@ -171,6 +199,18 @@ namespace FirstProject.Controllers
                         return View(model);
                     }
 
+                    // Capture old values for audit logging
+                    var oldValues = new
+                    {
+                        contact.CallNumber,
+                        contact.PersonId,
+                        contact.CustomerEmail,
+                        contact.CustomerPhone,
+                        contact.ContactDate,
+                        contact.Status,
+                        contact.ReasonForContact
+                    };
+
                     contact.CallNumber = model.CallNumber;
                     contact.PersonId = model.PersonId;
                     contact.CustomerEmail = model.CustomerEmail;
@@ -185,8 +225,33 @@ namespace FirstProject.Controllers
                     contact.LastModified = DateTime.Now;
                     contact.ModifiedBy = User.Identity?.Name ?? "System";
 
+                    // Capture new values for audit logging
+                    var newValues = new
+                    {
+                        contact.CallNumber,
+                        contact.PersonId,
+                        contact.CustomerEmail,
+                        contact.CustomerPhone,
+                        contact.ContactDate,
+                        contact.Status,
+                        contact.ReasonForContact
+                    };
+
                     _context.Update(contact);
                     await _context.SaveChangesAsync();
+
+                    // Log the update action
+                    await _auditService.LogAsync(
+                        AuditActions.Update,
+                        EntityTypes.CustomerContact,
+                        contact.Id,
+                        $"Customer Call #{contact.CallNumber}",
+                        GetCurrentUsername(),
+                        HttpContext,
+                        oldValues.ToAuditString(),
+                        newValues.ToAuditString(),
+                        "Customer contact updated via web interface"
+                    );
 
                     TempData["SuccessMessage"] = "Customer contact updated successfully!";
                     return RedirectToAction(nameof(Index));
@@ -226,11 +291,45 @@ namespace FirstProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var contact = await _context.CustomerContacts.FindAsync(id);
+            var contact = await _context.CustomerContacts
+                .Include(c => c.Person)
+                .FirstOrDefaultAsync(c => c.Id == id);
+                
             if (contact != null)
             {
+                // Capture values for audit logging before deletion
+                var deletedValues = new
+                {
+                    contact.Id,
+                    contact.CallNumber,
+                    contact.PersonId,
+                    PersonName = $"{contact.Person?.Forename} {contact.Person?.FamilyName}",
+                    contact.CustomerEmail,
+                    contact.CustomerPhone,
+                    contact.ContactDate,
+                    contact.Status,
+                    contact.ReasonForContact,
+                    contact.CreatedBy,
+                    contact.LastModified,
+                    contact.ModifiedBy
+                };
+
                 _context.CustomerContacts.Remove(contact);
                 await _context.SaveChangesAsync();
+
+                // Log the deletion action
+                await _auditService.LogAsync(
+                    AuditActions.Delete,
+                    EntityTypes.CustomerContact,
+                    contact.Id,
+                    $"Customer Call #{contact.CallNumber} - {contact.Person?.Forename} {contact.Person?.FamilyName}",
+                    GetCurrentUsername(),
+                    HttpContext,
+                    deletedValues.ToAuditString(),
+                    null,
+                    $"Customer contact record permanently deleted from system. Call Number: {contact.CallNumber}"
+                );
+
                 TempData["SuccessMessage"] = "Customer contact deleted successfully!";
             }
 
@@ -250,6 +349,26 @@ namespace FirstProject.Controllers
                 .ToListAsync();
 
             model.Customers = customers;
+        }
+
+        private string GetCurrentUsername()
+        {
+            try
+            {
+                // First try to get username from session if available
+                var sessionUsername = HttpContext.Session?.GetString("Username");
+                if (!string.IsNullOrEmpty(sessionUsername))
+                {
+                    return sessionUsername;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Session not configured, continue with other methods
+            }
+
+            // Fallback to User.Identity
+            return User.Identity?.Name ?? "Unknown";
         }
 
         private async Task<string> GenerateCallNumber()

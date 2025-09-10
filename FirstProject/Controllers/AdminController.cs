@@ -317,5 +317,240 @@ namespace FirstProject.Controllers
                 NewUser = newUser ?? new FirstProject.Models.ViewModels.CreateUserViewModel()
             };
         }
+
+        private bool IsCurrentUserAdmin()
+        {
+            try
+            {
+                // First try to get username from session if available
+                var sessionUsername = HttpContext.Session?.GetString("Username");
+                if (!string.IsNullOrEmpty(sessionUsername))
+                {
+                    return sessionUsername.ToLower() == "admin";
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Session not configured, continue with other methods
+            }
+
+            // Fallback to checking User.Identity
+            var identityName = User.Identity?.Name;
+            if (!string.IsNullOrEmpty(identityName))
+            {
+                return identityName.ToLower() == "admin";
+            }
+
+            // Additional fallback - check if user is authenticated and has admin identity
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return User.Identity.Name?.ToLower() == "admin";
+            }
+
+            return false;
+        }
+
+        // Audit Log Management
+        [HttpGet]
+        public async Task<IActionResult> AuditLogs(
+            string? actionFilter = null,
+            string? entityType = null,
+            string? userName = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            string? searchTerm = null,
+            int page = 1,
+            int pageSize = 50,
+            bool applied = false)
+        {
+            if (!IsCurrentUserAdmin())
+            {
+                return Forbid();
+            }
+
+            var query = _context.AuditLogs.AsQueryable();
+
+            // Debug: Get total count before any filters
+            var totalAuditLogs = await _context.AuditLogs.CountAsync();
+
+            List<AuditLog> auditLogs = new List<AuditLog>();
+            int totalRecords = 0;
+            int totalPages = 0;
+
+            // Only execute query if filters have been applied
+            if (applied)
+            {
+                // Apply filters
+                if (!string.IsNullOrEmpty(actionFilter))
+                {
+                    query = query.Where(a => a.Action == actionFilter);
+                }
+
+                if (!string.IsNullOrEmpty(entityType))
+                {
+                    query = query.Where(a => a.EntityType == entityType);
+                }
+
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    query = query.Where(a => a.UserName.Contains(userName));
+                }
+
+                if (fromDate.HasValue)
+                {
+                    var fromDateForComparison = fromDate.Value.Date;
+                    query = query.Where(a => a.Timestamp.Date >= fromDateForComparison);
+                }
+
+                if (toDate.HasValue)
+                {
+                    var toDateForComparison = toDate.Value.Date;
+                    query = query.Where(a => a.Timestamp.Date <= toDateForComparison);
+                }
+
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    query = query.Where(a => 
+                        a.EntityDescription.Contains(searchTerm) ||
+                        a.Details.Contains(searchTerm) ||
+                        a.OldValues.Contains(searchTerm) ||
+                        a.NewValues.Contains(searchTerm));
+                }
+
+                totalRecords = await query.CountAsync();
+                totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                auditLogs = await query
+                    .OrderByDescending(a => a.Timestamp)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+
+            // Debug: Add total count to ViewBag for troubleshooting
+            ViewBag.TotalAuditLogsInDatabase = totalAuditLogs;
+            ViewBag.FilteredCount = totalRecords;
+            ViewBag.FromDateFilter = fromDate;
+            ViewBag.ToDateFilter = toDate;
+
+            // Get filter options
+            var availableActions = await _context.AuditLogs
+                .Select(a => a.Action)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToListAsync();
+
+            var availableEntityTypes = await _context.AuditLogs
+                .Select(a => a.EntityType)
+                .Distinct()
+                .OrderBy(e => e)
+                .ToListAsync();
+
+            var availableUsers = await _context.AuditLogs
+                .Select(a => a.UserName)
+                .Distinct()
+                .OrderBy(u => u)
+                .ToListAsync();
+
+            var viewModel = new AuditLogViewModel
+            {
+                AuditLogs = auditLogs,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                TotalRecords = totalRecords,
+                PageSize = pageSize,
+                ActionFilter = actionFilter,
+                EntityTypeFilter = entityType,
+                UserNameFilter = userName,
+                FromDate = fromDate,
+                ToDate = toDate,
+                SearchTerm = searchTerm,
+                AvailableActions = availableActions,
+                AvailableEntityTypes = availableEntityTypes,
+                AvailableUsers = availableUsers
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AuditLogDetail(int id)
+        {
+            if (!IsCurrentUserAdmin())
+            {
+                return Forbid();
+            }
+
+            var auditLog = await _context.AuditLogs
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (auditLog == null)
+            {
+                return NotFound();
+            }
+
+            // Get related logs for the same entity
+            var relatedLogs = await _context.AuditLogs
+                .Where(a => a.EntityType == auditLog.EntityType && 
+                           a.EntityId == auditLog.EntityId && 
+                           a.Id != auditLog.Id)
+                .OrderByDescending(a => a.Timestamp)
+                .Take(10)
+                .ToListAsync();
+
+            var viewModel = new AuditLogDetailViewModel
+            {
+                AuditLog = auditLog,
+                RelatedLogs = relatedLogs
+            };
+
+            // Parse JSON values if available
+            try
+            {
+                if (!string.IsNullOrEmpty(auditLog.OldValues))
+                {
+                    viewModel.OldValuesDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(auditLog.OldValues);
+                }
+                if (!string.IsNullOrEmpty(auditLog.NewValues))
+                {
+                    viewModel.NewValuesDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(auditLog.NewValues);
+                }
+            }
+            catch
+            {
+                // If JSON parsing fails, leave as null and display raw values
+            }
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearOldAuditLogs(int daysToKeep = 90)
+        {
+            if (!IsCurrentUserAdmin())
+            {
+                return Forbid();
+            }
+
+            var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);
+            var logsToDelete = await _context.AuditLogs
+                .Where(a => a.Timestamp < cutoffDate)
+                .ToListAsync();
+
+            if (logsToDelete.Any())
+            {
+                _context.AuditLogs.RemoveRange(logsToDelete);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Successfully deleted {logsToDelete.Count} audit log entries older than {daysToKeep} days.";
+            }
+            else
+            {
+                TempData["InfoMessage"] = $"No audit log entries found older than {daysToKeep} days.";
+            }
+
+            return RedirectToAction(nameof(AuditLogs));
+        }
     }
 }

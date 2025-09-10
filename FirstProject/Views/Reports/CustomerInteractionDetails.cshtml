@@ -1,0 +1,198 @@
+@model FirstProject.Models.CustomerInteractionViewModel
+@using FirstProject.Models
+
+@{
+    ViewData["Title"] = $"Customer Interactions - {Model.Person.Forename} {Model.Person.FamilyName}";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user"></i> Customer Interaction History</h2>
+                <a asp-action="CustomerInteractions" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Customer Selection
+                </a>
+            </div>
+
+            <!-- Customer Information Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-circle"></i> Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> @Model.Person.Forename @Model.Person.FamilyName</p>
+                            <p><strong>Year of Birth:</strong> @Model.Person.YearOfBirth</p>
+                        </div>
+                        <div class="col-md-6">
+                            @if (Model.FirstContactDate.HasValue)
+                            {
+                                <p><strong>First Contact:</strong> @Model.FirstContactDate.Value.ToString("dd/MM/yyyy")</p>
+                            }
+                            @if (Model.LastContactDate.HasValue)
+                            {
+                                <p><strong>Last Contact:</strong> @Model.LastContactDate.Value.ToString("dd/MM/yyyy")</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body">
+                            <h3>@Model.TotalCalls</h3>
+                            <p class="mb-0">Total Calls</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body">
+                            <h3>@Model.OpenCalls</h3>
+                            <p class="mb-0">Open Calls</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body">
+                            <h3>@Model.PendingCalls</h3>
+                            <p class="mb-0">Pending Calls</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-secondary text-white">
+                        <div class="card-body">
+                            <h3>@Model.ClosedCalls</h3>
+                            <p class="mb-0">Closed Calls</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call History Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-phone"></i> Call History (Most Recent First)</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.CustomerContacts.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Call Number</th>
+                                        <th>Contact Date</th>
+                                        <th>Reason for Contact</th>
+                                        <th>Customer Email</th>
+                                        <th>Customer Phone</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
+                                        <th>Last Modified</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var contact in Model.CustomerContacts)
+                                    {
+                                        <tr>
+                                            <td>@contact.CallNumber</td>
+                                            <td>@contact.ContactDate.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                @{
+                                                    // Strip HTML tags and get plain text
+                                                    string plainText = System.Text.RegularExpressions.Regex.Replace(contact.ReasonForContact, "<.*?>", string.Empty);
+                                                    if (plainText.Length > 50)
+                                                    {
+                                                        @(plainText.Substring(0, 50) + "...")
+                                                    }
+                                                    else
+                                                    {
+                                                        @plainText
+                                                    }
+                                                }
+                                            </td>
+                                            <td>@contact.CustomerEmail</td>
+                                            <td>@contact.CustomerPhone</td>
+                                            <td>
+                                                @switch (contact.Status)
+                                                {
+                                                    case ContactStatus.Open:
+                                                        <span class="badge bg-success">Open</span>
+                                                        break;
+                                                    case ContactStatus.Pending:
+                                                        <span class="badge bg-warning">Pending</span>
+                                                        break;
+                                                    case ContactStatus.Closed:
+                                                        <span class="badge bg-secondary">Closed</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-light text-dark">Unknown</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>@(contact.CreatedBy ?? "Unknown")</td>
+                                            <td>
+                                                @if (contact.LastModified.HasValue)
+                                                {
+                                                    @contact.LastModified.Value.ToString("dd/MM/yyyy HH:mm")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Never</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a asp-controller="Contact" asp-action="Details" asp-route-id="@contact.Id" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                @if (contact.Status == ContactStatus.Closed)
+                                                {
+                                                    <a href="#" onclick="return confirmEditClosed('@Url.Action("Edit", "Contact", new { id = contact.Id })')" 
+                                                       class="btn btn-sm btn-outline-warning">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a asp-controller="Contact" asp-action="Edit" asp-route-id="@contact.Id" 
+                                                       class="btn btn-sm btn-outline-warning">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No call records found for this customer.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmEditClosed(editUrl) {
+    if (confirm('This call is marked as CLOSED. Are you sure you want to edit it?')) {
+        window.location.href = editUrl;
+        return true;
+    }
+    return false;
+}
+</script>
