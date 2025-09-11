@@ -8,9 +8,9 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <Version>1.1.1</Version>
-    <AssemblyVersion>1.1.1.0</AssemblyVersion>
-    <FileVersion>1.1.1.0</FileVersion>
+  <Version>2.0.1</Version>
+  <AssemblyVersion>2.0.1.0</AssemblyVersion>
+  <FileVersion>2.0.1.0</FileVersion>
     <Authors>Your Name</Authors>
     <Company>Your Company</Company>
     <Product>First Project</Product>
@@ -32,6 +32,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+  <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.6" />
     <PackageReference Include="Microsoft.Playwright" Version="1.54.0" />
     <PackageReference Include="Microsoft.Playwright.MSTest" Version="1.54.0" />
     <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.54.0" />

@@ -701,8 +701,10 @@ namespace FirstProject.Controllers
         }
 
         public IActionResult About()
-        {
-            return View();
-        }
+            {
+                var version = typeof(HomeController).Assembly.GetName().Version?.ToString() ?? "Unknown";
+                ViewBag.AppVersion = version;
+                return View();
+            }
     }
 }
