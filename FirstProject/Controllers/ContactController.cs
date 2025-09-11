@@ -22,12 +22,25 @@ namespace FirstProject.Controllers
         }
 
         // GET: Contact
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? filter = null)
         {
-            var contacts = await _context.CustomerContacts
+            var query = _context.CustomerContacts
                 .Include(c => c.Person)
+                .AsQueryable();
+
+            // Apply filter if specified
+            if (filter == "aged-open")
+            {
+                query = query.Where(c => c.Status == ContactStatus.Open && c.ContactDate < DateTime.Now.AddDays(-7));
+            }
+
+            var contacts = await query
                 .OrderByDescending(c => c.ContactDate)
                 .ToListAsync();
+
+            // Pass filter info to view for UI state
+            ViewBag.CurrentFilter = filter;
+            ViewBag.IsAgedOpenFilter = filter == "aged-open";
 
             return View(contacts);
         }
