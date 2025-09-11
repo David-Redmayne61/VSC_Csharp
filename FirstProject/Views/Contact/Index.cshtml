@@ -86,6 +86,35 @@
                 </div>
             </div>
 
+            <!-- Quick Filters -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-funnel me-2"></i>
+                            Quick Filters
+                        </h6>
+                        <div>
+                            @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter as string))
+                            {
+                                <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-2">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Clear Filter
+                                </a>
+                                <span class="badge bg-primary">Filter: @ViewBag.CurrentFilter</span>
+                            }
+                            else
+                            {
+                                <a asp-action="Index" asp-route-filter="aged-open" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Show Aged Open Calls (>7 days)
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Contacts Table -->
             <div class="card">
                 <div class="card-body">

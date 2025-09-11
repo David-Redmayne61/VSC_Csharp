@@ -41,6 +41,9 @@ namespace FirstProject.Controllers
             var openContacts = await _context.CustomerContacts
                 .Where(c => c.Status == ContactStatus.Open)
                 .CountAsync();
+            var agedOpenContacts = await _context.CustomerContacts
+                .Where(c => c.Status == ContactStatus.Open && c.ContactDate < DateTime.Now.AddDays(-7))
+                .CountAsync();
             var pendingContacts = await _context.CustomerContacts
                 .Where(c => c.Status == ContactStatus.Pending)
                 .CountAsync();
@@ -57,6 +60,7 @@ namespace FirstProject.Controllers
             ViewBag.TotalContacts = totalContacts;
             ViewBag.TodaysContacts = todaysContacts;
             ViewBag.OpenContacts = openContacts;
+            ViewBag.AgedOpenContacts = agedOpenContacts;
             ViewBag.PendingContacts = pendingContacts;
             ViewBag.ClosedContacts = closedContacts;
             ViewBag.RecentlyAdded = recentlyAdded;
